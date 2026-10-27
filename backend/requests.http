@@ -1,0 +1,5 @@
+### Ręczne testy API – rozszerzenie VS Code "REST Client" (humao.rest-client)
+@api = http://localhost:3001/api
+
+### Health-check
+GET {{api}}/health
