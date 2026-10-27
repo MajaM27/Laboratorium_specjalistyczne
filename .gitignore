@@ -1,0 +1,19 @@
+# Zależności
+node_modules/
+
+# Zmienne środowiskowe (commitujemy tylko .env.example)
+.env
+.env.local
+.env.*.local
+
+# Baza danych SQLite
+backend/data/*.db
+backend/data/*.db-*
+
+# Build
+frontend/dist/
+
+# Logi i systemowe
+*.log
+npm-debug.log*
+.DS_Store

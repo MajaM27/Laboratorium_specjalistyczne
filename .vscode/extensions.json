@@ -1,0 +1,12 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "editorconfig.editorconfig",
+    "qwtel.sqlite-viewer",
+    "humao.rest-client",
+    "jebbs.plantuml",
+    "bierner.markdown-mermaid",
+    "streetsidesoftware.code-spell-checker-polish"
+  ]
+}
