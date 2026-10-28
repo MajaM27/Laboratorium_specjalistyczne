@@ -26,3 +26,50 @@ Content-Type: application/json
 ### Dane zalogowanego użytkownika (token z poprzedniego żądania)
 GET {{api}}/auth/me
 Authorization: Bearer {{login.response.body.token}}
+
+### ===== Zwierzęta (PU-03) – wymagają tokenu z żądania "login" =====
+
+### Lista zwierząt
+GET {{api}}/pets
+Authorization: Bearer {{login.response.body.token}}
+
+### Wyszukiwanie po imieniu
+GET {{api}}/pets?search=re
+Authorization: Bearer {{login.response.body.token}}
+
+### Szczegóły zwierzęcia
+GET {{api}}/pets/1
+Authorization: Bearer {{login.response.body.token}}
+
+### Dodanie zwierzęcia
+# @name createPet
+POST {{api}}/pets
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Burek",
+  "species": "Pies",
+  "breed": "Kundel",
+  "birthDate": "2023-05-01",
+  "weight": 12.5,
+  "notes": "Lubi długie spacery"
+}
+
+### Dodanie – błędne dane (oczekiwane 400)
+POST {{api}}/pets
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "species": "Pies", "weight": -3, "birthDate": "2026-02-30" }
+
+### Edycja zwierzęcia
+PUT {{api}}/pets/{{createPet.response.body.pet.id}}
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "name": "Burek", "species": "Pies", "breed": "Kundel", "weight": 13 }
+
+### Usunięcie zwierzęcia (razem z wizytami)
+DELETE {{api}}/pets/{{createPet.response.body.pet.id}}
+Authorization: Bearer {{login.response.body.token}}
