@@ -3,3 +3,26 @@
 
 ### Health-check
 GET {{api}}/health
+
+### PU-01 – rejestracja
+POST {{api}}/auth/register
+Content-Type: application/json
+
+{ "email": "nowy@petcare.pl", "password": "Haslo1234" }
+
+### PU-01 – błędne dane (oczekiwane 400)
+POST {{api}}/auth/register
+Content-Type: application/json
+
+{ "email": "zly-email", "password": "abc" }
+
+### PU-02 – logowanie (konto demo z db:seed)
+# @name login
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "demo@petcare.pl", "password": "Demo1234" }
+
+### Dane zalogowanego użytkownika (token z poprzedniego żądania)
+GET {{api}}/auth/me
+Authorization: Bearer {{login.response.body.token}}
