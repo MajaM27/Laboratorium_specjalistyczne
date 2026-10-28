@@ -7,7 +7,7 @@ Status: ⬜ do zrobienia · 🟨 w trakcie · ✅ zrobione.
 | --- | --------------------------------------------------------- | -------------------------- | ------ | ---------- |
 | 0   | Środowisko: monorepo, pakiety, `.env`, ESLint/Prettier    | NF-M-02, NF-S-03           | ✅     | 2026-10-27 |
 | 1   | Baza danych: schemat, init, seed                          | NF-M-03, F-M-09            | ✅     | 2026-10-27 |
-| 2   | Backend: rejestracja, logowanie, `requireAuth`            | F-M-01, F-M-02, NF-M-04/05 | ⬜     |            |
+| 2   | Backend: rejestracja, logowanie, `requireAuth`            | F-M-01, F-M-02, NF-M-04/05 | ✅     | 2026-10-28 |
 | 3   | Backend: CRUD zwierząt + wyszukiwanie                     | F-M-03..05, F-S-01         | ⬜     |            |
 | 4   | Backend: CRUD wizyt, filtry, „zakończ”, statystyki        | F-M-06..08, F-S-02/03, F-C | ⬜     |            |
 | 5   | Frontend: logowanie, rejestracja, layout, chronione trasy | F-M-01, F-M-02             | ⬜     |            |
@@ -29,3 +29,13 @@ Status: ⬜ do zrobienia · 🟨 w trakcie · ✅ zrobione.
 - Dokumentacja: `KONTEKST.md` (kontekst aplikacji) i `docs/01…08`.
 - Uwagi techniczne: `better-sqlite3` przypięty do wersji 12.x (13.x powoduje segfault na Node 22.12);
   frontend działa na porcie **5180** (5173 bywa zajęty przez inne lokalne projekty).
+
+### 2026-10-28 – Krok 2: autoryzacja w backendzie
+
+- Endpointy `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`.
+- Hasła haszowane bcrypt; walidacja e-maila i siły hasła (min. 8 znaków, litera + cyfra).
+- E-mail zapisywany małymi literami – logowanie nie zależy od wielkości liter.
+- Middleware `requireAuth` (JWT w nagłówku `Authorization`) – gotowy dla modułów zwierząt i wizyt.
+- Ten sam komunikat dla złego hasła i nieistniejącego konta (nie zdradzamy, kto ma konto).
+- Przetestowane ręcznie 12 scenariuszy (poprawne i błędne dane, zajęty e-mail, zły/brak tokenu).
+- Wymagania F-M-01/02 – backend gotowy, frontend w kroku 5.

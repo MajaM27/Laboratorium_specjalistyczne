@@ -17,17 +17,19 @@ flowchart LR
 
 ## 4.2 Backend (`backend/src`)
 
-| Plik / katalog          | Odpowiedzialność                                              |
-| ----------------------- | ------------------------------------------------------------- |
-| `server.js`             | Start: tworzy schemat bazy i uruchamia serwer HTTP            |
-| `app.js`                | Konfiguracja Express: CORS, JSON, montowanie tras, błędy      |
-| `config.js`             | Odczyt i walidacja zmiennych środowiskowych (`.env`)          |
-| `db/index.js`           | Połączenie z SQLite, włączenie kluczy obcych                  |
-| `db/schema.sql`         | Definicja tabel (idempotentna – `CREATE TABLE IF NOT EXISTS`) |
-| `db/init.js`, `seed.js` | Skrypty: tworzenie/reset bazy, dane testowe                   |
-| `routes/`               | Trasy API – jeden plik na moduł                               |
-| `middleware/`           | Obsługa błędów (404, 500), później: `requireAuth`             |
-| `utils/httpError.js`    | Klasa błędu z kodem HTTP                                      |
+| Plik / katalog               | Odpowiedzialność                                              |
+| ---------------------------- | ------------------------------------------------------------- |
+| `server.js`                  | Start: tworzy schemat bazy i uruchamia serwer HTTP            |
+| `app.js`                     | Konfiguracja Express: CORS, JSON, montowanie tras, błędy      |
+| `config.js`                  | Odczyt i walidacja zmiennych środowiskowych (`.env`)          |
+| `db/index.js`                | Połączenie z SQLite, włączenie kluczy obcych                  |
+| `db/schema.sql`              | Definicja tabel (idempotentna – `CREATE TABLE IF NOT EXISTS`) |
+| `db/init.js`, `seed.js`      | Skrypty: tworzenie/reset bazy, dane testowe                   |
+| `routes/`                    | Trasy API – jeden plik na moduł                               |
+| `middleware/auth.js`         | `requireAuth` (weryfikacja JWT), `signToken`                  |
+| `middleware/errorHandler.js` | Obsługa błędów (404, 500)                                     |
+| `utils/validation.js`        | Walidacja pól (e-mail, hasło), `assertValid` → 400            |
+| `utils/httpError.js`         | Klasa błędu z kodem HTTP                                      |
 
 Przepływ żądania: `route → (requireAuth) → walidacja → zapytanie SQL → JSON`. Błąd rzucony jako
 `HttpError` trafia do `errorHandler`, który zwraca `{ error, details }`.

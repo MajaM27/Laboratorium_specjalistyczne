@@ -8,8 +8,8 @@ Status: ⬜ do zrobienia · 🟨 w trakcie · ✅ zrealizowane (aktualizowany na
 
 | ID     | Wymaganie                                                  | PU           | Status |
 | ------ | ---------------------------------------------------------- | ------------ | ------ |
-| F-M-01 | Rejestracja nowego użytkownika                             | PU-01        | ⬜     |
-| F-M-02 | Logowanie i wylogowywanie użytkownika                      | PU-02, PU-05 | ⬜     |
+| F-M-01 | Rejestracja nowego użytkownika                             | PU-01        | 🟨     |
+| F-M-02 | Logowanie i wylogowywanie użytkownika                      | PU-02, PU-05 | 🟨     |
 | F-M-03 | Dodawanie zwierząt do swojego konta                        | PU-03        | ⬜     |
 | F-M-04 | Przeglądanie listy swoich zwierząt                         | PU-03        | ⬜     |
 | F-M-05 | Edytowanie i usuwanie danych zwierzęcia                    | PU-03        | ⬜     |
@@ -51,9 +51,9 @@ Status: ⬜ do zrobienia · 🟨 w trakcie · ✅ zrealizowane (aktualizowany na
 | NF-M-01 | Czytelny i intuicyjny interfejs                            | React, spójny CSS              | ⬜     |
 | NF-M-02 | Backend w środowisku Node.js                               | Node.js 22 + Express 5         | ✅     |
 | NF-M-03 | Relacyjna baza danych SQLite                               | better-sqlite3, `schema.sql`   | ✅     |
-| NF-M-04 | Hasła przechowywane jako bezpieczne skróty kryptograficzne | bcryptjs                       | ⬜     |
-| NF-M-05 | Użytkownik ma dostęp wyłącznie do swoich danych            | JWT + filtrowanie po `user_id` | ⬜     |
-| NF-M-06 | Weryfikacja poprawności danych wejściowych                 | walidacja backend + frontend   | ⬜     |
+| NF-M-04 | Hasła przechowywane jako bezpieczne skróty kryptograficzne | bcryptjs                       | ✅     |
+| NF-M-05 | Użytkownik ma dostęp wyłącznie do swoich danych            | JWT + filtrowanie po `user_id` | 🟨     |
+| NF-M-06 | Weryfikacja poprawności danych wejściowych                 | walidacja backend + frontend   | 🟨     |
 | NF-M-07 | Działanie w popularnych przeglądarkach                     | Vite (build ES)                | ⬜     |
 
 ### SHOULD – istotne
