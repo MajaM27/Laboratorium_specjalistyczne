@@ -93,3 +93,55 @@ export function parsePetInput(body) {
     notes: cleanText(input.notes),
   };
 }
+
+const DATETIME_PATTERN = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})$/;
+
+export const VISIT_STATUSES = ['planned', 'done'];
+
+// Data i godzina w formacie YYYY-MM-DDTHH:MM (jak <input type="datetime-local">)
+export function isValidDateTime(value) {
+  const match = typeof value === 'string' ? DATETIME_PATTERN.exec(value) : null;
+  if (!match) return false;
+  const [, date, hours, minutes] = match;
+  return isValidDate(date) && Number(hours) < 24 && Number(minutes) < 60;
+}
+
+function validatePetId(value) {
+  if (isEmpty(value)) return 'Wybierz zwierzę.';
+  const id = Number(value);
+  if (!Number.isInteger(id) || id <= 0) return 'Wybierz zwierzę z listy.';
+  return null;
+}
+
+function validateVisitDateTime(value) {
+  if (isEmpty(value)) return 'Podaj datę i godzinę wizyty.';
+  if (!isValidDateTime(value)) return 'Podaj poprawną datę i godzinę (RRRR-MM-DDTGG:MM).';
+  return null;
+}
+
+function validateStatus(value) {
+  if (value === undefined) return null;
+  if (!VISIT_STATUSES.includes(value)) return 'Status musi mieć wartość „planned” lub „done”.';
+  return null;
+}
+
+// Waliduje dane wizyty (PU-04). Pominięty status zwracany jest jako undefined –
+// przy dodawaniu oznacza „planned”, przy edycji pozostawia dotychczasowy status.
+export function parseVisitInput(body) {
+  const input = body ?? {};
+  assertValid({
+    petId: validatePetId(input.petId),
+    visitDateTime: validateVisitDateTime(input.visitDateTime),
+    clinic: validateText(input.clinic, { label: 'Gabinet', required: true, max: 100 }),
+    purpose: validateText(input.purpose, { label: 'Cel wizyty', required: true, max: 200 }),
+    status: validateStatus(input.status),
+  });
+
+  return {
+    pet_id: Number(input.petId),
+    visit_datetime: input.visitDateTime,
+    clinic: input.clinic.trim(),
+    purpose: input.purpose.trim(),
+    status: input.status,
+  };
+}
