@@ -8,7 +8,7 @@ const router = Router();
 router.use(requireAuth);
 
 // Wizyty nie mają kolumny user_id – właściciela sprawdzamy przez JOIN z pets
-const VISIT_SELECT = `
+export const VISIT_SELECT = `
   SELECT v.id, v.pet_id, p.name AS pet_name, p.species AS pet_species, v.visit_datetime,
          v.clinic, v.purpose, v.status, v.created_at, v.updated_at
   FROM visits v JOIN pets p ON p.id = v.pet_id`;
