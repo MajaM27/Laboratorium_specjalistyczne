@@ -33,11 +33,11 @@ Status: ✅ zaimplementowany · ⬜ zaplanowany.
 | POST   | `/auth/register`                   | Rejestracja (PU-01)                     | –    | ✅     |
 | POST   | `/auth/login`                      | Logowanie, zwraca token (PU-02)         | –    | ✅     |
 | GET    | `/auth/me`                         | Dane zalogowanego użytkownika           | ✔    | ✅     |
-| GET    | `/pets?search=`                    | Lista zwierząt, wyszukiwanie po imieniu | ✔    | ⬜     |
-| POST   | `/pets`                            | Dodanie zwierzęcia                      | ✔    | ⬜     |
-| GET    | `/pets/:id`                        | Szczegóły zwierzęcia                    | ✔    | ⬜     |
-| PUT    | `/pets/:id`                        | Edycja zwierzęcia                       | ✔    | ⬜     |
-| DELETE | `/pets/:id`                        | Usunięcie zwierzęcia (z wizytami)       | ✔    | ⬜     |
+| GET    | `/pets?search=`                    | Lista zwierząt, wyszukiwanie po imieniu | ✔    | ✅     |
+| POST   | `/pets`                            | Dodanie zwierzęcia                      | ✔    | ✅     |
+| GET    | `/pets/:id`                        | Szczegóły zwierzęcia                    | ✔    | ✅     |
+| PUT    | `/pets/:id`                        | Edycja zwierzęcia                       | ✔    | ✅     |
+| DELETE | `/pets/:id`                        | Usunięcie zwierzęcia (z wizytami)       | ✔    | ✅     |
 | GET    | `/visits?status=&from=&to=&petId=` | Lista wizyt z filtrami                  | ✔    | ⬜     |
 | POST   | `/visits`                          | Dodanie wizyty                          | ✔    | ⬜     |
 | PUT    | `/visits/:id`                      | Edycja wizyty                           | ✔    | ⬜     |
@@ -131,3 +131,67 @@ Błędy: `401` – brak tokenu, token nieważny/wygasły lub konto usunięte.
 
 Nie ma osobnego endpointu – token JWT jest bezstanowy. Wylogowanie polega na usunięciu tokenu
 po stronie frontendu; po wygaśnięciu (`JWT_EXPIRES_IN`) token i tak przestaje działać.
+
+### Zwierzęta – `/pets` ✅ (PU-03)
+
+Wszystkie endpointy wymagają tokenu i działają **wyłącznie na zwierzętach zalogowanego
+użytkownika**. Cudze lub nieistniejące zwierzę → `404 { "error": "Nie znaleziono zwierzęcia." }`.
+
+#### Obiekt zwierzęcia
+
+```json
+{
+  "id": 1,
+  "name": "Rex",
+  "species": "Pies",
+  "breed": "Labrador",
+  "birthDate": "2020-04-12",
+  "weight": 31.5,
+  "notes": "Alergia na kurczaka",
+  "visitCount": 2,
+  "nextVisit": "2026-11-15T16:30",
+  "createdAt": "2026-10-28 07:30:00",
+  "updatedAt": "2026-10-28 07:30:00"
+}
+```
+
+`visitCount` – liczba wszystkich wizyt, `nextVisit` – najwcześniejsza wizyta o statusie
+`planned` (albo `null`). Pola wyliczane, tylko do odczytu.
+
+#### Pola wejściowe (POST, PUT)
+
+| Pole        | Wymagane | Reguły                                                 |
+| ----------- | -------- | ------------------------------------------------------ |
+| `name`      | tak      | tekst, maks. 50 znaków (spacje na brzegach są usuwane) |
+| `species`   | tak      | tekst, maks. 50 znaków                                 |
+| `breed`     | nie      | tekst, maks. 50 znaków                                 |
+| `birthDate` | nie      | `RRRR-MM-DD`, istniejąca data, nie z przyszłości       |
+| `weight`    | nie      | liczba > 0 i ≤ 1000 (kg), zaokrąglana do 2 miejsc      |
+| `notes`     | nie      | tekst, maks. 1000 znaków                               |
+
+Puste pole opcjonalne zapisywane jest jako `null`. `PUT` zastępuje **wszystkie** pola – pole
+pominięte zostanie wyczyszczone.
+
+#### Endpointy
+
+| Żądanie               | Odpowiedź                                                                    |
+| --------------------- | ---------------------------------------------------------------------------- |
+| `GET /pets`           | `200 { "pets": [ … ], "total": 2 }` – sortowane po imieniu                   |
+| `GET /pets?search=re` | jak wyżej, tylko imiona zawierające frazę (bez rozróżniania wielkości liter) |
+| `GET /pets/:id`       | `200 { "pet": { … } }`                                                       |
+| `POST /pets`          | `201 { "pet": { … } }`                                                       |
+| `PUT /pets/:id`       | `200 { "pet": { … } }`                                                       |
+| `DELETE /pets/:id`    | `204` – usuwa też wszystkie wizyty zwierzęcia                                |
+
+Błąd walidacji (`400`):
+
+```json
+{
+  "error": "Popraw zaznaczone pola formularza.",
+  "details": {
+    "name": "Pole „Imię” jest wymagane.",
+    "weight": "Waga musi być liczbą większą od 0.",
+    "birthDate": "Podaj poprawną datę urodzenia (RRRR-MM-DD)."
+  }
+}
+```

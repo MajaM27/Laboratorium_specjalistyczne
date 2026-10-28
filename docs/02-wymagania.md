@@ -10,9 +10,9 @@ Status: ⬜ do zrobienia · 🟨 w trakcie · ✅ zrealizowane (aktualizowany na
 | ------ | ---------------------------------------------------------- | ------------ | ------ |
 | F-M-01 | Rejestracja nowego użytkownika                             | PU-01        | 🟨     |
 | F-M-02 | Logowanie i wylogowywanie użytkownika                      | PU-02, PU-05 | 🟨     |
-| F-M-03 | Dodawanie zwierząt do swojego konta                        | PU-03        | ⬜     |
-| F-M-04 | Przeglądanie listy swoich zwierząt                         | PU-03        | ⬜     |
-| F-M-05 | Edytowanie i usuwanie danych zwierzęcia                    | PU-03        | ⬜     |
+| F-M-03 | Dodawanie zwierząt do swojego konta                        | PU-03        | 🟨     |
+| F-M-04 | Przeglądanie listy swoich zwierząt                         | PU-03        | 🟨     |
+| F-M-05 | Edytowanie i usuwanie danych zwierzęcia                    | PU-03        | 🟨     |
 | F-M-06 | Dodawanie wizyt weterynaryjnych                            | PU-04        | ⬜     |
 | F-M-07 | Przeglądanie zaplanowanych wizyt i historii wizyt          | PU-04        | ⬜     |
 | F-M-08 | Edytowanie i usuwanie wizyt                                | PU-04        | ⬜     |
@@ -22,10 +22,10 @@ Status: ⬜ do zrobienia · 🟨 w trakcie · ✅ zrealizowane (aktualizowany na
 
 | ID     | Wymaganie                                          | Status |
 | ------ | -------------------------------------------------- | ------ |
-| F-S-01 | Wyszukiwanie zwierząt po imieniu                   | ⬜     |
+| F-S-01 | Wyszukiwanie zwierząt po imieniu                   | 🟨     |
 | F-S-02 | Filtrowanie wizyt według daty                      | ⬜     |
 | F-S-03 | Oznaczanie wizyty jako zakończonej                 | ⬜     |
-| F-S-04 | Wyświetlanie szczegółowych informacji o zwierzęciu | ⬜     |
+| F-S-04 | Wyświetlanie szczegółowych informacji o zwierzęciu | 🟨     |
 
 ### COULD – dodatkowe
 

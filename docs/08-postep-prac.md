@@ -8,7 +8,7 @@ Status: ⬜ do zrobienia · 🟨 w trakcie · ✅ zrobione.
 | 0   | Środowisko: monorepo, pakiety, `.env`, ESLint/Prettier    | NF-M-02, NF-S-03           | ✅     | 2026-10-27 |
 | 1   | Baza danych: schemat, init, seed                          | NF-M-03, F-M-09            | ✅     | 2026-10-27 |
 | 2   | Backend: rejestracja, logowanie, `requireAuth`            | F-M-01, F-M-02, NF-M-04/05 | ✅     | 2026-10-28 |
-| 3   | Backend: CRUD zwierząt + wyszukiwanie                     | F-M-03..05, F-S-01         | ⬜     |            |
+| 3   | Backend: CRUD zwierząt + wyszukiwanie                     | F-M-03..05, F-S-01         | ✅     | 2026-10-28 |
 | 4   | Backend: CRUD wizyt, filtry, „zakończ”, statystyki        | F-M-06..08, F-S-02/03, F-C | ⬜     |            |
 | 5   | Frontend: logowanie, rejestracja, layout, chronione trasy | F-M-01, F-M-02             | ⬜     |            |
 | 6   | Frontend: zwierzęta (lista, formularz, szczegóły)         | F-M-03..05, F-S-01/04      | ⬜     |            |
@@ -39,3 +39,12 @@ Status: ⬜ do zrobienia · 🟨 w trakcie · ✅ zrobione.
 - Ten sam komunikat dla złego hasła i nieistniejącego konta (nie zdradzamy, kto ma konto).
 - Przetestowane ręcznie 12 scenariuszy (poprawne i błędne dane, zajęty e-mail, zły/brak tokenu).
 - Wymagania F-M-01/02 – backend gotowy, frontend w kroku 5.
+
+### 2026-10-28 – Krok 3: zwierzęta w backendzie
+
+- Endpointy `GET/POST /api/pets`, `GET/PUT/DELETE /api/pets/:id`, wyszukiwanie `?search=`.
+- Każde zapytanie filtrowane po `user_id` – cudze zwierzę zwraca 404 (izolacja danych, NF-M-05).
+- Walidacja pól (wymagane imię i gatunek, poprawna data urodzenia nie z przyszłości, waga > 0).
+- Lista zwraca liczbę wizyt i najbliższą zaplanowaną wizytę każdego zwierzęcia (pod F-S-04, F-C-02).
+- Usunięcie zwierzęcia kasuje jego wizyty (sprawdzone w bazie).
+- Przetestowane 19 scenariuszy, w tym próby odczytu/edycji/usunięcia cudzego zwierzęcia.
