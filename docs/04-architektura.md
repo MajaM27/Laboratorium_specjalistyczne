@@ -28,7 +28,7 @@ flowchart LR
 | `routes/`                    | Trasy API – jeden plik na moduł                                     |
 | `middleware/auth.js`         | `requireAuth` (weryfikacja JWT), `signToken`                        |
 | `middleware/errorHandler.js` | Obsługa błędów (404, 500)                                           |
-| `utils/validation.js`        | Walidacja pól (e-mail, hasło, dane zwierzęcia), `assertValid` → 400 |
+| `utils/validation.js`        | Walidacja pól (e-mail, hasło, zwierzę, wizyta), `assertValid` → 400 |
 | `utils/httpError.js`         | Klasa błędu z kodem HTTP                                            |
 
 Przepływ żądania: `route → (requireAuth) → walidacja → zapytanie SQL → JSON`. Błąd rzucony jako

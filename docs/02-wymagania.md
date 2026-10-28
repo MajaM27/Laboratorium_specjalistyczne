@@ -13,9 +13,9 @@ Status: ⬜ do zrobienia · 🟨 w trakcie · ✅ zrealizowane (aktualizowany na
 | F-M-03 | Dodawanie zwierząt do swojego konta                        | PU-03        | 🟨     |
 | F-M-04 | Przeglądanie listy swoich zwierząt                         | PU-03        | 🟨     |
 | F-M-05 | Edytowanie i usuwanie danych zwierzęcia                    | PU-03        | 🟨     |
-| F-M-06 | Dodawanie wizyt weterynaryjnych                            | PU-04        | ⬜     |
-| F-M-07 | Przeglądanie zaplanowanych wizyt i historii wizyt          | PU-04        | ⬜     |
-| F-M-08 | Edytowanie i usuwanie wizyt                                | PU-04        | ⬜     |
+| F-M-06 | Dodawanie wizyt weterynaryjnych                            | PU-04        | 🟨     |
+| F-M-07 | Przeglądanie zaplanowanych wizyt i historii wizyt          | PU-04        | 🟨     |
+| F-M-08 | Edytowanie i usuwanie wizyt                                | PU-04        | 🟨     |
 | F-M-09 | Zapisywanie danych użytkowników, zwierząt i wizyt w SQLite | –            | 🟨     |
 
 ### SHOULD – istotne
@@ -23,16 +23,16 @@ Status: ⬜ do zrobienia · 🟨 w trakcie · ✅ zrealizowane (aktualizowany na
 | ID     | Wymaganie                                          | Status |
 | ------ | -------------------------------------------------- | ------ |
 | F-S-01 | Wyszukiwanie zwierząt po imieniu                   | 🟨     |
-| F-S-02 | Filtrowanie wizyt według daty                      | ⬜     |
-| F-S-03 | Oznaczanie wizyty jako zakończonej                 | ⬜     |
+| F-S-02 | Filtrowanie wizyt według daty                      | 🟨     |
+| F-S-03 | Oznaczanie wizyty jako zakończonej                 | 🟨     |
 | F-S-04 | Wyświetlanie szczegółowych informacji o zwierzęciu | 🟨     |
 
 ### COULD – dodatkowe
 
 | ID     | Wymaganie                                          | Status |
 | ------ | -------------------------------------------------- | ------ |
-| F-C-01 | Wyświetlanie liczby zwierząt przypisanych do konta | ⬜     |
-| F-C-02 | Wyświetlanie najbliższej zaplanowanej wizyty       | ⬜     |
+| F-C-01 | Wyświetlanie liczby zwierząt przypisanych do konta | 🟨     |
+| F-C-02 | Wyświetlanie najbliższej zaplanowanej wizyty       | 🟨     |
 | F-C-03 | Notatki dotyczące opieki nad zwierzęciem           | 🟨     |
 
 ### WON'T – poza zakresem aktualnej wersji

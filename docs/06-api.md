@@ -38,12 +38,13 @@ Status: ✅ zaimplementowany · ⬜ zaplanowany.
 | GET    | `/pets/:id`                        | Szczegóły zwierzęcia                    | ✔    | ✅     |
 | PUT    | `/pets/:id`                        | Edycja zwierzęcia                       | ✔    | ✅     |
 | DELETE | `/pets/:id`                        | Usunięcie zwierzęcia (z wizytami)       | ✔    | ✅     |
-| GET    | `/visits?status=&from=&to=&petId=` | Lista wizyt z filtrami                  | ✔    | ⬜     |
-| POST   | `/visits`                          | Dodanie wizyty                          | ✔    | ⬜     |
-| PUT    | `/visits/:id`                      | Edycja wizyty                           | ✔    | ⬜     |
-| PATCH  | `/visits/:id/complete`             | Oznaczenie wizyty jako zakończonej      | ✔    | ⬜     |
-| DELETE | `/visits/:id`                      | Usunięcie wizyty                        | ✔    | ⬜     |
-| GET    | `/stats`                           | Liczba zwierząt, najbliższa wizyta      | ✔    | ⬜     |
+| GET    | `/visits?status=&from=&to=&petId=` | Lista wizyt z filtrami                  | ✔    | ✅     |
+| GET    | `/visits/:id`                      | Szczegóły wizyty                        | ✔    | ✅     |
+| POST   | `/visits`                          | Dodanie wizyty                          | ✔    | ✅     |
+| PUT    | `/visits/:id`                      | Edycja wizyty                           | ✔    | ✅     |
+| PATCH  | `/visits/:id/complete`             | Oznaczenie wizyty jako zakończonej      | ✔    | ✅     |
+| DELETE | `/visits/:id`                      | Usunięcie wizyty                        | ✔    | ✅     |
+| GET    | `/stats`                           | Liczba zwierząt, najbliższa wizyta      | ✔    | ✅     |
 
 ## 6.3 Szczegóły
 
@@ -195,3 +196,92 @@ Błąd walidacji (`400`):
   }
 }
 ```
+
+### Wizyty – `/visits` ✅ (PU-04)
+
+Wszystkie endpointy wymagają tokenu. Wizyta należy do użytkownika przez swoje zwierzę
+(`visits JOIN pets`). Cudza lub nieistniejąca wizyta → `404 { "error": "Nie znaleziono wizyty." }`.
+
+#### Obiekt wizyty
+
+```json
+{
+  "id": 2,
+  "petId": 1,
+  "petName": "Rex",
+  "petSpecies": "Pies",
+  "visitDateTime": "2026-11-15T16:30",
+  "clinic": "VetCare Lublin",
+  "purpose": "Kontrola okresowa",
+  "status": "planned",
+  "createdAt": "2026-10-28 07:30:00",
+  "updatedAt": "2026-10-28 07:30:00"
+}
+```
+
+`petName` i `petSpecies` są dołączane dla wygody frontendu (tylko do odczytu).
+
+#### Pola wejściowe (POST, PUT)
+
+| Pole            | Wymagane | Reguły                                                                                    |
+| --------------- | -------- | ----------------------------------------------------------------------------------------- |
+| `petId`         | tak      | id **własnego** zwierzęcia – inaczej `400` z błędem pola `petId`                          |
+| `visitDateTime` | tak      | `RRRR-MM-DDTGG:MM` (format `<input type="datetime-local">`), data i godzina muszą istnieć |
+| `clinic`        | tak      | tekst, maks. 100 znaków                                                                   |
+| `purpose`       | tak      | tekst, maks. 200 znaków                                                                   |
+| `status`        | nie      | `planned` lub `done`                                                                      |
+
+Pominięty `status`: przy `POST` wizyta jest `planned`, przy `PUT` status się **nie zmienia**
+(edycja formularza nie cofa przypadkiem zakończonej wizyty). Data z przeszłości jest dozwolona –
+można dopisać wizytę do historii od razu ze statusem `done`.
+
+#### Filtry listy (`GET /visits`)
+
+| Parametr | Przykład     | Działanie                                         |
+| -------- | ------------ | ------------------------------------------------- |
+| `status` | `planned`    | „Zaplanowane” (`planned`) lub „Historia” (`done`) |
+| `from`   | `2026-11-01` | wizyty od tego dnia (włącznie)                    |
+| `to`     | `2026-11-30` | wizyty do tego dnia (włącznie)                    |
+| `petId`  | `1`          | wizyty jednego zwierzęcia                         |
+
+Filtry można łączyć. Sortowanie: `status=done` – od najnowszej, w pozostałych przypadkach
+chronologicznie. Niepoprawny filtr (np. `from` po `to`) → `400` z opisem w `details`.
+
+#### Endpointy
+
+| Żądanie                      | Odpowiedź                                                                        |
+| ---------------------------- | -------------------------------------------------------------------------------- |
+| `GET /visits`                | `200 { "visits": [ … ], "total": 3 }`                                            |
+| `GET /visits/:id`            | `200 { "visit": { … } }`                                                         |
+| `POST /visits`               | `201 { "visit": { … } }`                                                         |
+| `PUT /visits/:id`            | `200 { "visit": { … } }`                                                         |
+| `PATCH /visits/:id/complete` | `200 { "visit": { … } }` ze statusem `done` (ponowne wywołanie też zwraca `200`) |
+| `DELETE /visits/:id`         | `204`                                                                            |
+
+Błąd walidacji (`400`):
+
+```json
+{
+  "error": "Popraw zaznaczone pola formularza.",
+  "details": {
+    "petId": "Wybierz zwierzę.",
+    "visitDateTime": "Podaj poprawną datę i godzinę (RRRR-MM-DDTGG:MM).",
+    "clinic": "Pole „Gabinet” jest wymagane."
+  }
+}
+```
+
+### GET /stats ✅ (F-C-01, F-C-02)
+
+Dane do panelu głównego zalogowanego użytkownika. Odpowiedź `200`:
+
+```json
+{
+  "petCount": 2,
+  "plannedVisitCount": 2,
+  "doneVisitCount": 1,
+  "nextVisit": { "id": 2, "petName": "Rex", "visitDateTime": "2026-11-15T16:30", "…": "…" }
+}
+```
+
+`nextVisit` – najwcześniejsza wizyta o statusie `planned` (pełny obiekt wizyty) albo `null`.

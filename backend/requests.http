@@ -73,3 +73,71 @@ Content-Type: application/json
 ### Usunięcie zwierzęcia (razem z wizytami)
 DELETE {{api}}/pets/{{createPet.response.body.pet.id}}
 Authorization: Bearer {{login.response.body.token}}
+
+### ===== Wizyty (PU-04) – wymagają tokenu z żądania "login" =====
+
+### Wszystkie wizyty (chronologicznie)
+GET {{api}}/visits
+Authorization: Bearer {{login.response.body.token}}
+
+### Zaplanowane wizyty
+GET {{api}}/visits?status=planned
+Authorization: Bearer {{login.response.body.token}}
+
+### Historia wizyt (od najnowszej)
+GET {{api}}/visits?status=done
+Authorization: Bearer {{login.response.body.token}}
+
+### Filtrowanie po dacie i zwierzęciu
+GET {{api}}/visits?from=2026-11-01&to=2026-12-31&petId=1
+Authorization: Bearer {{login.response.body.token}}
+
+### Dodanie wizyty
+# @name createVisit
+POST {{api}}/visits
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "petId": 1,
+  "visitDateTime": "2026-12-10T14:00",
+  "clinic": "VetCare Lublin",
+  "purpose": "Odrobaczanie"
+}
+
+### Dodanie – błędne dane (oczekiwane 400)
+POST {{api}}/visits
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "petId": 1, "visitDateTime": "2026-02-30T25:00", "clinic": "" }
+
+### Szczegóły wizyty
+GET {{api}}/visits/{{createVisit.response.body.visit.id}}
+Authorization: Bearer {{login.response.body.token}}
+
+### Edycja wizyty (bez pola status – status się nie zmienia)
+PUT {{api}}/visits/{{createVisit.response.body.visit.id}}
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "petId": 1,
+  "visitDateTime": "2026-12-11T15:30",
+  "clinic": "VetCare Lublin",
+  "purpose": "Odrobaczanie i kontrola wagi"
+}
+
+### Oznaczenie jako zakończonej
+PATCH {{api}}/visits/{{createVisit.response.body.visit.id}}/complete
+Authorization: Bearer {{login.response.body.token}}
+
+### Usunięcie wizyty
+DELETE {{api}}/visits/{{createVisit.response.body.visit.id}}
+Authorization: Bearer {{login.response.body.token}}
+
+### ===== Panel główny =====
+
+### Statystyki (liczba zwierząt, najbliższa wizyta)
+GET {{api}}/stats
+Authorization: Bearer {{login.response.body.token}}
