@@ -10,10 +10,10 @@ Status: ⬜ do zrobienia · 🟨 w trakcie · ✅ zrobione.
 | 2   | Backend: rejestracja, logowanie, `requireAuth`            | F-M-01, F-M-02, NF-M-04/05 | ✅     | 2026-10-28 |
 | 3   | Backend: CRUD zwierząt + wyszukiwanie                     | F-M-03..05, F-S-01         | ✅     | 2026-10-28 |
 | 4   | Backend: CRUD wizyt, filtry, „zakończ”, statystyki        | F-M-06..08, F-S-02/03, F-C | ✅     | 2026-10-28 |
-| 5   | Frontend: logowanie, rejestracja, layout, chronione trasy | F-M-01, F-M-02             | ⬜     |            |
-| 6   | Frontend: zwierzęta (lista, formularz, szczegóły)         | F-M-03..05, F-S-01/04      | ⬜     |            |
-| 7   | Frontend: wizyty i panel główny                           | F-M-06..08, F-S-02/03, F-C | ⬜     |            |
-| 8   | Wygląd: responsywność, komunikaty błędów, (ciemny motyw)  | NF-M-01, NF-S-01/02        | ⬜     |            |
+| 5   | Frontend: logowanie, rejestracja, layout, chronione trasy | F-M-01, F-M-02             | ✅     | 2026-11-03 |
+| 6   | Frontend: zwierzęta (lista, formularz, szczegóły)         | F-M-03..05, F-S-01/04      | ✅     | 2026-11-03 |
+| 7   | Frontend: wizyty i panel główny                           | F-M-06..08, F-S-02/03, F-C | ✅     | 2026-11-03 |
+| 8   | Wygląd: responsywność, komunikaty błędów, (ciemny motyw)  | NF-M-01, NF-S-01/02        | 🟨     | 2026-11-03 |
 | 9   | Dokumentacja końcowa: diagram UCD (draw.io/PNG), zrzuty   | –                          | 🟨     |            |
 
 ## Dziennik zmian
@@ -61,3 +61,18 @@ Status: ⬜ do zrobienia · 🟨 w trakcie · ✅ zrobione.
   zaplanowanych; „zakończ” można wywołać wielokrotnie.
 - `GET /api/stats`: liczba zwierząt, liczba wizyt zaplanowanych i odbytych, najbliższa wizyta.
 - Przetestowane 32 scenariusze, w tym filtry, sortowanie i próby dostępu do cudzych wizyt.
+
+### 2026-11-03 – Kroki 5–7 (+ część 8): frontend na podstawie projektu graficznego
+
+- Przeniesiono wygląd z projektu Figma Make „PetCare Veterinary Dashboard” (React + Tailwind)
+  do naszego frontendu: zwykły CSS, JavaScript, React Router, polski interfejs.
+- Ekrany: logowanie, rejestracja, panel główny, lista/formularz/szczegóły zwierzęcia,
+  zaplanowane wizyty, historia wizyt, formularz wizyty, konto.
+- Wszystkie dane pochodzą z API (zamiast przykładowych danych z projektu); zdjęcia zastąpione
+  kolorowymi kafelkami z inicjałem, pominięte elementy spoza wymagań (lekarz, mapa, powiadomienia).
+- `AuthProvider`: token JWT w `localStorage`, sprawdzanie sesji przez `GET /auth/me`, trasy
+  chronione, automatyczne wylogowanie po `401`.
+- Walidacja formularzy po stronie klienta + wyświetlanie błędów pól z backendu.
+- Responsywność: menu wysuwane poniżej 800 px, układ jednokolumnowy poniżej 580 px.
+- Sprawdzone w przeglądarce na koncie demo (panel, listy, szczegóły, filtry, walidacja, widok mobilny).
+- Zostaje w kroku 8: ewentualny ciemny motyw (NF-C-01), test w innych przeglądarkach.
