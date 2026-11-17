@@ -8,6 +8,7 @@ import { EmptyState, Loader } from '../components/States.jsx';
 import { StatusBadge } from '../components/VisitItem.jsx';
 import { useAuth } from '../context/auth.js';
 import { useApiData } from '../hooks/useApiData.js';
+import { useVisitActions } from '../hooks/useVisitActions.js';
 import { formatAge, formatDate, formatDateTime, formatWeight } from '../utils/format.js';
 import { useI18n } from '../context/language.js';
 
@@ -23,7 +24,7 @@ function DetailFact({ label, value, icon }) {
   );
 }
 
-function Timeline({ visits, onComplete, busy }) {
+function Timeline({ visits, onComplete, onDelete, busy }) {
   const { t } = useI18n();
   return visits.map((v) => (
     <div className={`timeline ${v.status}`} key={v.id}>
@@ -42,13 +43,28 @@ function Timeline({ visits, onComplete, busy }) {
             onClick={() => onComplete(v)}
             disabled={busy}
             title={t('visits.markDone')}
+            aria-label={t('visits.markDone')}
           >
             <Icon name="check" size={16} />
           </button>
         )}
-        <Link className="icon-action" to={`/visits/${v.id}/edit`} title={t('visits.edit')}>
+        <Link
+          className="icon-action"
+          to={`/visits/${v.id}/edit`}
+          title={t('visits.edit')}
+          aria-label={t('visits.edit')}
+        >
           <Icon name="edit" size={16} />
         </Link>
+        <button
+          className="icon-action danger"
+          onClick={() => onDelete(v)}
+          disabled={busy}
+          title={t('visits.delete')}
+          aria-label={t('visits.delete')}
+        >
+          <Icon name="trash" size={16} />
+        </button>
       </div>
     </div>
   ));
@@ -80,19 +96,12 @@ export default function PetDetailsPage() {
     }
   }
 
-  async function handleComplete(visit) {
-    setBusy(true);
-    setActionError('');
-    try {
-      await request(`/visits/${visit.id}/complete`, { method: 'PATCH' });
-      visits.reload();
-      pet.reload();
-    } catch (err) {
-      setActionError(err.message);
-    } finally {
-      setBusy(false);
-    }
-  }
+  // Po zmianie wizyty odświeżamy listę i dane zwierzęcia (liczba wizyt, najbliższa wizyta)
+  const visitActions = useVisitActions(() => {
+    visits.reload();
+    pet.reload();
+  });
+  const visitsBusy = busy || visitActions.busy;
 
   if (pet.error)
     return (
@@ -115,7 +124,7 @@ export default function PetDetailsPage() {
       <Link className="back-button" to="/pets">
         <Icon name="back" size={15} /> {t('petDetails.back')}
       </Link>
-      <Alert>{actionError || visits.error}</Alert>
+      <Alert>{actionError || visitActions.error || visits.error}</Alert>
       <section className="pet-hero">
         <PetAvatar pet={p} size={150} radius={22} className="pet-hero-photo" />
         <div className="pet-hero-copy">
@@ -178,9 +187,19 @@ export default function PetDetailsPage() {
           ) : (
             <>
               {planned.length > 0 && <p className="timeline-label">{t('petDetails.planned')}</p>}
-              <Timeline visits={planned} onComplete={handleComplete} busy={busy} />
+              <Timeline
+                visits={planned}
+                onComplete={visitActions.complete}
+                onDelete={visitActions.remove}
+                busy={visitsBusy}
+              />
               {done.length > 0 && <p className="timeline-label">{t('petDetails.history')}</p>}
-              <Timeline visits={done} onComplete={handleComplete} busy={busy} />
+              <Timeline
+                visits={done}
+                onComplete={visitActions.complete}
+                onDelete={visitActions.remove}
+                busy={visitsBusy}
+              />
             </>
           )}
         </section>

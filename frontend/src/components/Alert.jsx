@@ -1,11 +1,13 @@
 import Icon from './Icon.jsx';
 
-// Komunikat dla użytkownika: type = 'error' | 'success'
+const ICONS = { error: 'close', success: 'check', warning: 'clock' };
+
+// Komunikat dla użytkownika: type = 'error' | 'success' | 'warning'
 export default function Alert({ type = 'error', children }) {
   if (!children) return null;
   return (
     <div className={`alert alert-${type}`} role={type === 'error' ? 'alert' : 'status'}>
-      <Icon name={type === 'error' ? 'close' : 'check'} size={16} />
+      <Icon name={ICONS[type]} size={16} />
       <span>{children}</span>
     </div>
   );

@@ -9,7 +9,8 @@ export function ProtectedRoute() {
   const { t } = useI18n();
   const location = useLocation();
   if (status === 'checking') return <Loader text={t('common.checkingSession')} />;
-  if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  if (!user)
+    return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
   return <Outlet />;
 }
 

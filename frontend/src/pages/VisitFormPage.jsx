@@ -41,6 +41,15 @@ function VisitForm({ visit, pets, defaultPetId }) {
 
   const update = (key) => (e) => setForm({ ...form, [key]: e.target.value });
   const isPast = form.visitDateTime && form.visitDateTime < nowISO();
+  const isFuture = form.visitDateTime && form.visitDateTime > nowISO();
+  // „Anuluj” prowadzi tam, skąd zwykle się tu przychodzi – działa też po wejściu z linku
+  const cancelTo = visit
+    ? visit.status === 'done'
+      ? '/history'
+      : '/visits'
+    : defaultPetId
+      ? `/pets/${defaultPetId}`
+      : '/visits';
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -78,11 +87,7 @@ function VisitForm({ visit, pets, defaultPetId }) {
           <Alert>{error}</Alert>
           <div className="form-grid">
             <Field label={t('visitForm.pet')} error={errors.petId}>
-              <select
-                value={form.petId}
-                onChange={update('petId')}
-                aria-invalid={Boolean(errors.petId)}
-              >
+              <select value={form.petId} onChange={update('petId')}>
                 <option value="">{t('visitForm.choosePet')}</option>
                 {pets.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -126,10 +131,13 @@ function VisitForm({ visit, pets, defaultPetId }) {
           {isPast && form.status === 'planned' && (
             <p className="form-hint">{t('visitForm.pastHint')}</p>
           )}
+          {isFuture && form.status === 'done' && (
+            <p className="form-hint">{t('visitForm.futureDoneHint')}</p>
+          )}
           <div className="form-buttons">
-            <button className="secondary" type="button" onClick={() => navigate(-1)}>
+            <Link className="secondary" to={cancelTo}>
               {t('common.cancel')}
-            </button>
+            </Link>
             <button className="primary" type="submit" disabled={busy}>
               <Icon name="check" size={18} /> {busy ? t('common.saving') : t('visitForm.submit')}
             </button>

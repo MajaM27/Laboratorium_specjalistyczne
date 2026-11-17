@@ -342,6 +342,11 @@ button:disabled {
   background: var(--sage-light);
 }
 
+.alert-warning {
+  color: var(--warning);
+  background: var(--warning-bg);
+}
+
 .loader {
   display: flex;
   align-items: center;
@@ -1845,6 +1850,29 @@ button:disabled {
 
 .account-card {
   max-width: 620px;
+}
+
+.account-stack {
+  display: grid;
+  gap: 18px;
+}
+
+.account-card h3 {
+  margin: 0 0 6px;
+}
+
+.account-lead {
+  margin: 0 0 18px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.account-danger {
+  border-color: var(--danger-line);
+}
+
+.account-danger h3 {
+  color: var(--danger);
 }
 
 .settings-avatar {

@@ -99,9 +99,11 @@ export default function DashboardPage() {
           label={t('dashboard.statPlanned')}
           value={s ? s.plannedVisitCount : '–'}
           note={
-            s?.nextVisit
-              ? t('dashboard.statNext', { date: formatDateTime(s.nextVisit.visitDateTime) })
-              : t('dashboard.statNone')
+            s?.overdueVisitCount
+              ? t('dashboard.statOverdue', { count: s.overdueVisitCount })
+              : s?.nextVisit
+                ? t('dashboard.statNext', { date: formatDateTime(s.nextVisit.visitDateTime) })
+                : t('dashboard.statNone')
           }
         />
         <Stat
@@ -117,7 +119,7 @@ export default function DashboardPage() {
         <section className="section-card">
           <SectionHead title={t('dashboard.myPets')} action={t('dashboard.seeAll')} to="/pets" />
           {!pets.data ? (
-            <Loader />
+            !pets.error && <Loader />
           ) : pets.data.pets.length === 0 ? (
             <EmptyState
               title={t('dashboard.noPets')}
@@ -154,7 +156,7 @@ export default function DashboardPage() {
             to="/visits"
           />
           {!visits.data ? (
-            <Loader />
+            !visits.error && <Loader />
           ) : visits.data.visits.length === 0 ? (
             <EmptyState
               icon="calendar"

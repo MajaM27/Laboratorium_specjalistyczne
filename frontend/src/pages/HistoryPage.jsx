@@ -75,6 +75,7 @@ export default function HistoryPage() {
                           className="icon-action"
                           to={`/visits/${v.id}/edit`}
                           title={t('visits.edit')}
+                          aria-label={t('visits.edit')}
                         >
                           <Icon name="edit" size={16} />
                         </Link>
@@ -83,6 +84,7 @@ export default function HistoryPage() {
                           onClick={() => actions.remove(v)}
                           disabled={actions.busy}
                           title={t('visits.delete')}
+                          aria-label={t('visits.delete')}
                         >
                           <Icon name="trash" size={16} />
                         </button>

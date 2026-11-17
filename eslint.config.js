@@ -12,7 +12,7 @@ export default [
 
   // Backend – Node.js (ES modules)
   {
-    files: ['backend/**/*.js', '*.js', 'frontend/*.config.js'],
+    files: ['backend/**/*.js', '*.js', 'frontend/*.config.js', 'frontend/test/**/*.js'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -26,6 +26,7 @@ export default [
   // Frontend – React w przeglądarce
   {
     files: ['frontend/**/*.{js,jsx}'],
+    ignores: ['frontend/test/**'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',

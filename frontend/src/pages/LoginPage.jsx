@@ -9,7 +9,7 @@ import { useI18n } from '../context/language.js';
 
 // PU-02: logowanie
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, notice } = useAuth();
   const { t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
@@ -43,7 +43,10 @@ export default function LoginPage() {
   return (
     <AuthLayout eyebrow={t('login.eyebrow')} title={t('login.title')} lead={t('login.lead')}>
       <form onSubmit={handleSubmit} className="auth-form" noValidate>
-        <Alert type="success">{location.state?.message}</Alert>
+        <Alert type="success">
+          {location.state?.message || (notice === 'deleted' && t('account.deleted'))}
+        </Alert>
+        <Alert type="warning">{notice === 'expired' && t('login.sessionExpired')}</Alert>
         <Alert>{error}</Alert>
         <Field
           label={t('auth.email')}
