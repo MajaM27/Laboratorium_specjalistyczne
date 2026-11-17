@@ -6,10 +6,11 @@ import { config } from '../config.js';
 
 const schemaPath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'schema.sql');
 
-fs.mkdirSync(path.dirname(config.databasePath), { recursive: true });
+const inMemory = config.databasePath === ':memory:';
+if (!inMemory) fs.mkdirSync(path.dirname(config.databasePath), { recursive: true });
 
 export const db = new Database(config.databasePath);
-db.pragma('journal_mode = WAL');
+if (!inMemory) db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
 // Tworzy tabele, jeśli jeszcze nie istnieją (bezpieczne przy każdym starcie)

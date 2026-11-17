@@ -19,20 +19,24 @@ flowchart LR
 
 | Plik / katalog               | Odpowiedzialność                                                    |
 | ---------------------------- | ------------------------------------------------------------------- |
-| `server.js`                  | Start: tworzy schemat bazy i uruchamia serwer HTTP                  |
-| `app.js`                     | Konfiguracja Express: CORS, JSON, montowanie tras, błędy            |
+| `server.js`                  | Start: schemat bazy, serwer HTTP, łagodne zamknięcie (Ctrl+C)       |
+| `app.js`                     | Konfiguracja Express: CORS, JSON (maks. 100 kB), trasy, błędy       |
 | `config.js`                  | Odczyt i walidacja zmiennych środowiskowych (`.env`)                |
 | `db/index.js`                | Połączenie z SQLite, włączenie kluczy obcych                        |
 | `db/schema.sql`              | Definicja tabel (idempotentna – `CREATE TABLE IF NOT EXISTS`)       |
 | `db/init.js`, `seed.js`      | Skrypty: tworzenie/reset bazy, dane testowe                         |
 | `routes/`                    | Trasy API – jeden plik na moduł                                     |
-| `middleware/auth.js`         | `requireAuth` (weryfikacja JWT), `signToken`                        |
-| `middleware/errorHandler.js` | Obsługa błędów (404, 500)                                           |
+| `middleware/auth.js`         | `requireAuth` (weryfikacja JWT, tylko HS256), `signToken`           |
+| `middleware/errorHandler.js` | Obsługa błędów (400 zły JSON, 404, 413, 500)                        |
 | `utils/validation.js`        | Walidacja pól (e-mail, hasło, zwierzę, wizyta), `assertValid` → 400 |
 | `utils/httpError.js`         | Klasa błędu z kodem HTTP                                            |
 
 Przepływ żądania: `route → (requireAuth) → walidacja → zapytanie SQL → JSON`. Błąd rzucony jako
 `HttpError` trafia do `errorHandler`, który zwraca `{ error, details }`.
+
+**Testy automatyczne** (`backend/test/`, `npm test`): wbudowany `node:test` – bez dodatkowych
+zależności. Testy uruchamiają prawdziwą aplikację Express na losowym porcie z bazą SQLite
+w pamięci (`DATABASE_PATH=:memory:`), więc nie dotykają pliku `data/petcare.db`.
 
 ## 4.3 Frontend (`frontend/src`)
 

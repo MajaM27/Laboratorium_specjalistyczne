@@ -1,11 +1,13 @@
 # 6. REST API
 
 Bazowy adres: `http://localhost:3001/api` (w trybie dev frontend używa `/api` przez proxy Vite).
-Format danych: JSON. Testy ręczne: [`backend/requests.http`](../backend/requests.http).
+Format danych: JSON (treść żądania maks. 100 kB). Testy ręczne:
+[`backend/requests.http`](../backend/requests.http), automatyczne: `npm test` ([`backend/test/`](../backend/test/)).
 
 ## 6.1 Konwencje
 
-- Endpointy chronione wymagają nagłówka `Authorization: Bearer <token>`.
+- Endpointy chronione wymagają nagłówka `Authorization: Bearer <token>` (wielkość liter w
+  `Bearer` nie ma znaczenia; akceptowane są tylko tokeny podpisane algorytmem HS256).
 - Format błędu:
 
   ```json
@@ -17,10 +19,11 @@ Format danych: JSON. Testy ręczne: [`backend/requests.http`](../backend/request
 | 200 | OK                                                  |
 | 201 | Utworzono zasób                                     |
 | 204 | Usunięto (brak treści)                              |
-| 400 | Błędne dane wejściowe (walidacja)                   |
+| 400 | Błędne dane wejściowe (walidacja) lub zły JSON      |
 | 401 | Brak lub nieważny token / złe dane logowania        |
 | 404 | Zasób nie istnieje lub należy do innego użytkownika |
 | 409 | Konflikt (np. zajęty e-mail)                        |
+| 413 | Treść żądania za duża (powyżej 100 kB)              |
 | 500 | Błąd serwera                                        |
 
 ## 6.2 Endpointy
