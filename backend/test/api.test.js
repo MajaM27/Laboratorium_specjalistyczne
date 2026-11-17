@@ -506,3 +506,49 @@ describe('Statystyki', () => {
     assert.equal(res.body.nextVisit.visitDateTime, '2026-12-01T10:00');
   });
 });
+
+describe('Język komunikatów (Accept-Language)', () => {
+  const en = { 'Accept-Language': 'en-GB,en;q=0.9' };
+
+  test('domyślnie komunikaty po polsku', async () => {
+    const res = await api('POST', '/auth/login', { body: { email: 'x@test.pl', password: 'zle' } });
+    assert.equal(res.status, 401);
+    assert.equal(res.body.error, 'Nieprawidłowy adres e-mail lub hasło.');
+    assert.match(res.headers.get('vary') ?? '', /Accept-Language/);
+  });
+
+  test('Accept-Language: en → błąd logowania po angielsku', async () => {
+    const res = await api('POST', '/auth/login', {
+      body: { email: 'x@test.pl', password: 'zle' },
+      headers: en,
+    });
+    assert.equal(res.status, 401);
+    assert.equal(res.body.error, 'Invalid email address or password.');
+  });
+
+  test('błędy walidacji pól po angielsku (także z parametrami)', async () => {
+    const { token } = await createUser();
+    const res = await api('POST', '/pets', {
+      token,
+      body: { name: '', species: 'x'.repeat(51), weight: -1 },
+      headers: en,
+    });
+    assert.equal(res.status, 400);
+    assert.equal(res.body.error, 'Please correct the highlighted fields.');
+    assert.equal(res.body.details.name, 'The "Name" field is required.');
+    assert.equal(res.body.details.species, 'The "Species" field can have at most 50 characters.');
+    assert.equal(res.body.details.weight, 'Weight must be a number greater than 0.');
+  });
+
+  test('rejestracja: komunikat sukcesu po angielsku, nieobsługiwany język → polski', async () => {
+    const register = await api('POST', '/auth/register', {
+      body: { email: 'english@test.pl', password: 'Haslo1234' },
+      headers: en,
+    });
+    assert.equal(register.status, 201);
+    assert.equal(register.body.message, 'Account created. You can now sign in.');
+
+    const de = await api('GET', '/nie-ma', { headers: { 'Accept-Language': 'de-DE' } });
+    assert.match(de.body.error, /^Nie znaleziono/);
+  });
+});

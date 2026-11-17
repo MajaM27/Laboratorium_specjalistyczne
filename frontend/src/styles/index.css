@@ -688,10 +688,41 @@ button:disabled {
   position: relative;
 }
 
-.auth-theme-toggle {
+.auth-tools {
   position: absolute;
   top: 20px;
   right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Przełącznik języka PL / EN */
+.lang-switch {
+  display: flex;
+  height: 40px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface);
+}
+
+.lang-switch button {
+  min-width: 36px;
+  padding: 0 8px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.lang-switch button:hover {
+  color: var(--link);
+}
+
+.lang-switch button[aria-pressed='true'] {
+  background: var(--tint);
+  color: var(--link-strong);
 }
 
 .content {

@@ -11,12 +11,14 @@ import VisitTabs from '../components/VisitTabs.jsx';
 import { useApiData } from '../hooks/useApiData.js';
 import { useVisitActions } from '../hooks/useVisitActions.js';
 import { formatDate } from '../utils/format.js';
+import { useI18n } from '../context/language.js';
 
 const NO_FILTERS = { petId: '', from: '', to: '' };
 
 // Historia odbytych wizyt (status „done”, F-M-07), od najnowszej
 export default function HistoryPage() {
-  usePageMeta('Historia wizyt', 'Wszystkie odbyte wizyty Twoich zwierząt.');
+  const { t } = useI18n();
+  usePageMeta(t('history.title'), t('history.subtitle'));
   const [filters, setFilters] = useState(NO_FILTERS);
   const pets = useApiData('/pets');
   const visits = useApiData(`/visits?${filtersToQuery('done', filters)}`);
@@ -33,20 +35,20 @@ export default function HistoryPage() {
         {!visits.data ? (
           !visits.error && <Loader />
         ) : visits.data.visits.length === 0 ? (
-          <EmptyState icon="file" title="Brak wizyt w historii">
-            Zakończone wizyty pojawią się tutaj.
+          <EmptyState icon="file" title={t('history.empty')}>
+            {t('history.emptyText')}
           </EmptyState>
         ) : (
           <div className="history-scroll">
             <table className="history-table">
               <thead>
                 <tr>
-                  <th>Data</th>
-                  <th>Zwierzę</th>
-                  <th>Cel wizyty</th>
-                  <th>Gabinet</th>
+                  <th>{t('history.date')}</th>
+                  <th>{t('history.pet')}</th>
+                  <th>{t('history.purpose')}</th>
+                  <th>{t('history.clinic')}</th>
                   <th>
-                    <span className="sr-only">Akcje</span>
+                    <span className="sr-only">{t('history.actions')}</span>
                   </th>
                 </tr>
               </thead>
@@ -72,7 +74,7 @@ export default function HistoryPage() {
                         <Link
                           className="icon-action"
                           to={`/visits/${v.id}/edit`}
-                          title="Edytuj wizytę"
+                          title={t('visits.edit')}
                         >
                           <Icon name="edit" size={16} />
                         </Link>
@@ -80,7 +82,7 @@ export default function HistoryPage() {
                           className="icon-action danger"
                           onClick={() => actions.remove(v)}
                           disabled={actions.busy}
-                          title="Usuń wizytę"
+                          title={t('visits.delete')}
                         >
                           <Icon name="trash" size={16} />
                         </button>

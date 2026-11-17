@@ -10,12 +10,14 @@ import { VisitCard } from '../components/VisitItem.jsx';
 import VisitTabs from '../components/VisitTabs.jsx';
 import { useApiData } from '../hooks/useApiData.js';
 import { useVisitActions } from '../hooks/useVisitActions.js';
+import { useI18n } from '../context/language.js';
 
 const NO_FILTERS = { petId: '', from: '', to: '' };
 
 // Zaplanowane wizyty (F-M-07) z filtrami (F-S-02) i oznaczaniem jako zakończone (F-S-03)
 export default function VisitsPage() {
-  usePageMeta('Zaplanowane wizyty', 'Planuj wizyty u weterynarza i zarządzaj nimi.');
+  const { t } = useI18n();
+  usePageMeta(t('visits.title'), t('visits.subtitle'));
   const [filters, setFilters] = useState(NO_FILTERS);
   const pets = useApiData('/pets');
   const visits = useApiData(`/visits?${filtersToQuery('planned', filters)}`);
@@ -33,11 +35,11 @@ export default function VisitsPage() {
         ) : visits.data.visits.length === 0 ? (
           <EmptyState
             icon="calendar"
-            title={filtered ? 'Brak wizyt dla wybranych filtrów' : 'Brak zaplanowanych wizyt'}
+            title={filtered ? t('visits.noneFiltered') : t('visits.none')}
             action={
               !filtered && (
                 <Link className="primary" to="/visits/new">
-                  <Icon name="plus" size={18} /> Zaplanuj wizytę
+                  <Icon name="plus" size={18} /> {t('visits.plan')}
                 </Link>
               )
             }

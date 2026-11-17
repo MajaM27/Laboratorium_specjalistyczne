@@ -9,8 +9,10 @@ import { useAuth } from '../context/auth.js';
 import { useApiData } from '../hooks/useApiData.js';
 import { useDebounced } from '../hooks/useDebounced.js';
 import { formatAge, formatDate, formatDateTime, formatWeight } from '../utils/format.js';
+import { useI18n } from '../context/language.js';
 
 function PetCard({ pet, onDelete, busy }) {
+  const { t } = useI18n();
   const [bg, fg] = petColors(pet.id);
   return (
     <article className="pet-card">
@@ -18,14 +20,18 @@ function PetCard({ pet, onDelete, busy }) {
         <span className="pet-card-initial">{pet.name.charAt(0).toUpperCase()}</span>
         <span className="pet-card-species">{pet.species}</span>
         <div className="card-tools">
-          <Link to={`/pets/${pet.id}/edit`} title="Edytuj" aria-label={`Edytuj ${pet.name}`}>
+          <Link
+            to={`/pets/${pet.id}/edit`}
+            title={t('common.edit')}
+            aria-label={t('pets.editNamed', { name: pet.name })}
+          >
             <Icon name="edit" size={17} />
           </Link>
           <button
             onClick={() => onDelete(pet)}
             disabled={busy}
-            title="Usuń"
-            aria-label={`Usuń ${pet.name}`}
+            title={t('common.delete')}
+            aria-label={t('pets.deleteNamed', { name: pet.name })}
           >
             <Icon name="trash" size={17} />
           </button>
@@ -34,24 +40,26 @@ function PetCard({ pet, onDelete, busy }) {
       <div className="pet-card-body">
         <h3>{pet.name}</h3>
         <p>
-          {[pet.breed || 'Rasa nieznana', formatAge(pet.birthDate)].filter(Boolean).join(' · ')}
+          {[pet.breed || t('pets.unknownBreed'), formatAge(pet.birthDate)]
+            .filter(Boolean)
+            .join(' · ')}
         </p>
         <div className="pet-facts">
           <span>
-            <small>Data urodzenia</small>
+            <small>{t('pets.birthDate')}</small>
             <b>{formatDate(pet.birthDate)}</b>
           </span>
           <span>
-            <small>Waga</small>
+            <small>{t('pets.weight')}</small>
             <b>{formatWeight(pet.weight)}</b>
           </span>
           <span className="pet-facts-wide">
-            <small>Najbliższa wizyta</small>
-            <b>{pet.nextVisit ? formatDateTime(pet.nextVisit) : 'brak zaplanowanych'}</b>
+            <small>{t('pets.nextVisit')}</small>
+            <b>{pet.nextVisit ? formatDateTime(pet.nextVisit) : t('pets.noneScheduled')}</b>
           </span>
         </div>
         <Link className="outline-button" to={`/pets/${pet.id}`}>
-          Szczegóły <Icon name="arrow" size={16} />
+          {t('common.details')} <Icon name="arrow" size={16} />
         </Link>
       </div>
     </article>
@@ -60,7 +68,8 @@ function PetCard({ pet, onDelete, busy }) {
 
 // Lista zwierząt z wyszukiwaniem po imieniu (F-M-04, F-S-01)
 export default function PetsPage() {
-  usePageMeta('Moje zwierzęta', 'Wszyscy Twoi podopieczni w jednym miejscu.');
+  const { t } = useI18n();
+  usePageMeta(t('pets.title'), t('pets.subtitle'));
   const { request } = useAuth();
   const [search, setSearch] = useState('');
   const query = useDebounced(search.trim());
@@ -71,9 +80,7 @@ export default function PetsPage() {
   const [actionError, setActionError] = useState('');
 
   async function handleDelete(pet) {
-    const ok = window.confirm(
-      `Usunąć zwierzę „${pet.name}”? Zostaną usunięte także wszystkie jego wizyty (${pet.visitCount}).`,
-    );
+    const ok = window.confirm(t('pets.confirmDelete', { name: pet.name, count: pet.visitCount }));
     if (!ok) return;
     setBusy(true);
     setActionError('');
@@ -94,14 +101,14 @@ export default function PetsPage() {
           <Icon name="search" size={18} />
           <input
             type="search"
-            placeholder="Szukaj po imieniu…"
+            placeholder={t('pets.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            aria-label="Szukaj zwierzęcia po imieniu"
+            aria-label={t('pets.searchLabel')}
           />
         </label>
         <Link className="primary" to="/pets/new">
-          <Icon name="plus" size={18} /> Dodaj zwierzę
+          <Icon name="plus" size={18} /> {t('pets.add')}
         </Link>
       </div>
 
@@ -111,19 +118,19 @@ export default function PetsPage() {
         !error && <Loader />
       ) : data.pets.length === 0 ? (
         query ? (
-          <EmptyState icon="search" title="Brak wyników">
-            Nie znaleziono zwierzęcia o imieniu zawierającym „{query}”.
+          <EmptyState icon="search" title={t('pets.noResults')}>
+            {t('pets.noResultsText', { query })}
           </EmptyState>
         ) : (
           <EmptyState
-            title="Nie masz jeszcze żadnych zwierząt"
+            title={t('pets.empty')}
             action={
               <Link className="primary" to="/pets/new">
-                <Icon name="plus" size={18} /> Dodaj pierwsze zwierzę
+                <Icon name="plus" size={18} /> {t('pets.addFirst')}
               </Link>
             }
           >
-            Dodaj profil swojego pupila, aby planować wizyty i prowadzić jego historię.
+            {t('pets.emptyText')}
           </EmptyState>
         )
       ) : (
@@ -136,8 +143,8 @@ export default function PetsPage() {
               <span>
                 <Icon name="plus" size={28} />
               </span>
-              <b>Dodaj kolejne zwierzę</b>
-              <small>Utwórz profil dla swojego pupila</small>
+              <b>{t('pets.addAnother')}</b>
+              <small>{t('pets.addAnotherText')}</small>
             </Link>
           )}
         </div>

@@ -102,3 +102,15 @@ Status: ⬜ do zrobienia · 🟨 w trakcie · ✅ zrobione.
   ekranach logowania i rejestracji, wybór zapamiętywany w `localStorage` (`petcare-theme`).
 - Sprawdzone w przeglądarce: logowanie, panel, lista i szczegóły zwierząt, wizyty, formularz wizyty.
 - Zostaje w kroku 8: test w innych przeglądarkach (NF-M-07).
+
+### 2026-11-17 – Języki polski i angielski (NF-C-02)
+
+- Frontend: wszystkie teksty interfejsu przeniesione do słowników `i18n/messages.js` (PL i EN),
+  hook `useI18n()` z funkcją `t()`, przełącznik PL/EN w nagłówku oraz na ekranach logowania
+  i rejestracji; wybór zapamiętywany w `localStorage` (`petcare-lang`), domyślnie polski.
+- Daty, wiek zwierzęcia (odmiana: rok/lata/lat – year/years) i waga formatowane wg języka.
+- Backend: nagłówek `Accept-Language` wybiera język komunikatów błędów (domyślnie polski –
+  API zgodne wstecz); słownik w `utils/i18n.js`, 4 nowe testy (razem 40).
+- Sprawdzone w przeglądarce: panel, wizyty, szczegóły zwierzęcia w obu językach; błędy walidacji
+  z API po angielsku.
+- Ograniczenie: format pól daty (`dd.mm.rrrr`) zależy od języka przeglądarki, nie aplikacji.

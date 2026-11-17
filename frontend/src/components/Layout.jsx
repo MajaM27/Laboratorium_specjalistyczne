@@ -4,29 +4,34 @@ import { useAuth } from '../context/auth.js';
 import Icon from './Icon.jsx';
 import Logo from './Logo.jsx';
 import ThemeToggle from './ThemeToggle.jsx';
+import LanguageSwitch from './LanguageSwitch.jsx';
 import { initials } from '../utils/format.js';
+import { useI18n } from '../context/language.js';
 
 const nav = [
-  { to: '/', icon: 'grid', label: 'Panel główny', end: true },
-  { to: '/pets', icon: 'paw', label: 'Moje zwierzęta' },
-  { to: '/visits', icon: 'calendar', label: 'Zaplanowane wizyty' },
-  { to: '/history', icon: 'file', label: 'Historia wizyt' },
-  { to: '/account', icon: 'user', label: 'Moje konto' },
+  { to: '/', icon: 'grid', label: 'nav.dashboard', end: true },
+  { to: '/pets', icon: 'paw', label: 'nav.pets' },
+  { to: '/visits', icon: 'calendar', label: 'nav.visits' },
+  { to: '/history', icon: 'file', label: 'nav.history' },
+  { to: '/account', icon: 'user', label: 'nav.account' },
 ];
 
 function Sidebar({ open, close }) {
   const { user, logout } = useAuth();
+  const { t } = useI18n();
   return (
     <>
-      {open && <button className="sidebar-scrim" onClick={close} aria-label="Zamknij menu" />}
+      {open && (
+        <button className="sidebar-scrim" onClick={close} aria-label={t('layout.closeMenu')} />
+      )}
       <aside className={`sidebar ${open ? 'sidebar-open' : ''}`}>
         <Logo />
-        <p className="nav-label">MENU</p>
+        <p className="nav-label">{t('nav.label')}</p>
         <nav>
           {nav.map((item) => (
             <NavLink key={item.to} to={item.to} end={item.end} onClick={close}>
               <Icon name={item.icon} />
-              <span>{item.label}</span>
+              <span>{t(item.label)}</span>
             </NavLink>
           ))}
         </nav>
@@ -34,16 +39,16 @@ function Sidebar({ open, close }) {
           <span>
             <Icon name="heart" size={18} />
           </span>
-          <b>Porada</b>
-          <p>Regularne wizyty kontrolne pomagają zwierzętom żyć dłużej i szczęśliwiej.</p>
+          <b>{t('layout.tipTitle')}</b>
+          <p>{t('layout.tipText')}</p>
         </div>
         <div className="profile">
           <div className="avatar">{initials(user?.email)}</div>
           <div className="profile-copy">
             <b title={user?.email}>{user?.email}</b>
-            <small>Właściciel zwierząt</small>
+            <small>{t('common.ownerRole')}</small>
           </div>
-          <button onClick={logout} title="Wyloguj się" aria-label="Wyloguj się">
+          <button onClick={logout} title={t('layout.logout')} aria-label={t('layout.logout')}>
             <Icon name="logout" size={18} />
           </button>
         </div>
@@ -55,6 +60,7 @@ function Sidebar({ open, close }) {
 // Szkielet aplikacji po zalogowaniu: menu boczne + nagłówek + treść strony
 export default function Layout() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const [menuOpen, setMenuOpen] = useState(false);
   const [meta, setMeta] = useState({ title: '', subtitle: '' });
   const location = useLocation();
@@ -72,7 +78,7 @@ export default function Layout() {
           <button
             className="mobile-menu"
             onClick={() => setMenuOpen(true)}
-            aria-label="Otwórz menu"
+            aria-label={t('layout.openMenu')}
           >
             <Icon name="menu" />
           </button>
@@ -81,6 +87,7 @@ export default function Layout() {
             {meta.subtitle && <p>{meta.subtitle}</p>}
           </div>
           <div className="topbar-actions">
+            <LanguageSwitch />
             <ThemeToggle />
             <NavLink to="/account" className="top-avatar" title={user?.email}>
               {initials(user?.email)}
