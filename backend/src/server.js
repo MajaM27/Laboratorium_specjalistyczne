@@ -6,6 +6,9 @@ applySchema();
 
 const server = createApp().listen(config.port, () => {
   console.log(`PetCare API działa na http://localhost:${config.port}/api (${config.env})`);
+  if (config.env === 'production') {
+    console.log(`Aplikacja (frontend z ${config.frontendDist}): http://localhost:${config.port}`);
+  }
 });
 
 server.on('error', (err) => {

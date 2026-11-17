@@ -48,7 +48,11 @@ function Sidebar({ open, close }) {
             <b title={user?.email}>{user?.email}</b>
             <small>{t('common.ownerRole')}</small>
           </div>
-          <button onClick={logout} title={t('layout.logout')} aria-label={t('layout.logout')}>
+          <button
+            onClick={() => logout()}
+            title={t('layout.logout')}
+            aria-label={t('layout.logout')}
+          >
             <Icon name="logout" size={18} />
           </button>
         </div>

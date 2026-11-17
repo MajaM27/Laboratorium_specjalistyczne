@@ -29,8 +29,14 @@ export function VisitRow({ visit, featured = false }) {
         </span>
       </div>
       <div className="appointment-time">
-        <Icon name="clock" size={15} />
-        {d.time}
+        {isOverdue(visit) ? (
+          <StatusBadge visit={visit} />
+        ) : (
+          <>
+            <Icon name="clock" size={15} />
+            {d.time}
+          </>
+        )}
       </div>
     </Link>
   );
@@ -73,7 +79,12 @@ export function VisitCard({ visit, onComplete, onDelete, busy }) {
             <span>{t('visits.complete')}</span>
           </button>
         )}
-        <Link to={`/visits/${visit.id}/edit`} className="icon-action" title={t('visits.edit')}>
+        <Link
+          to={`/visits/${visit.id}/edit`}
+          className="icon-action"
+          title={t('visits.edit')}
+          aria-label={t('visits.edit')}
+        >
           <Icon name="edit" size={17} />
         </Link>
         <button
@@ -81,6 +92,7 @@ export function VisitCard({ visit, onComplete, onDelete, busy }) {
           onClick={() => onDelete(visit)}
           disabled={busy}
           title={t('visits.delete')}
+          aria-label={t('visits.delete')}
         >
           <Icon name="trash" size={17} />
         </button>

@@ -17,6 +17,13 @@ Format danych: JSON (treść żądania maks. 100 kB). Testy ręczne:
 - Język komunikatów (NF-C-02): nagłówek `Accept-Language`. Domyślnie polski; `en` (np.
   `en-GB,en;q=0.9`) zwraca komunikaty `error`, `details` i `message` po angielsku. Inne języki →
   polski. Odpowiedzi mają nagłówek `Vary: Accept-Language`. Tłumaczenia: `backend/src/utils/i18n.js`.
+- Limit nieudanych prób: `POST /auth/login`, `POST /auth/register`, `PUT /auth/password` i
+  `DELETE /auth/me` – po `AUTH_RATE_LIMIT_MAX` (domyślnie 10) odpowiedziach 4xx z jednego adresu IP
+  w ciągu `AUTH_RATE_LIMIT_WINDOW_MINUTES` (15 min) kolejne żądania dostają `429` z nagłówkiem
+  `Retry-After` (sekundy). Udane żądania nie są liczone.
+- Każda odpowiedź API ma nagłówki bezpieczeństwa: `X-Content-Type-Options: nosniff`,
+  `X-Frame-Options: DENY`, `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`,
+  `Referrer-Policy: no-referrer`.
 
 | Kod | Znaczenie                                           |
 | --- | --------------------------------------------------- |
@@ -28,6 +35,7 @@ Format danych: JSON (treść żądania maks. 100 kB). Testy ręczne:
 | 404 | Zasób nie istnieje lub należy do innego użytkownika |
 | 409 | Konflikt (np. zajęty e-mail)                        |
 | 413 | Treść żądania za duża (powyżej 100 kB)              |
+| 429 | Zbyt wiele nieudanych prób (logowanie, hasło)       |
 | 500 | Błąd serwera                                        |
 
 ## 6.2 Endpointy
@@ -40,6 +48,8 @@ Status: ✅ zaimplementowany · ⬜ zaplanowany.
 | POST   | `/auth/register`                   | Rejestracja (PU-01)                     | –    | ✅     |
 | POST   | `/auth/login`                      | Logowanie, zwraca token (PU-02)         | –    | ✅     |
 | GET    | `/auth/me`                         | Dane zalogowanego użytkownika           | ✔    | ✅     |
+| PUT    | `/auth/password`                   | Zmiana hasła                            | ✔    | ✅     |
+| DELETE | `/auth/me`                         | Usunięcie konta (z danymi)              | ✔    | ✅     |
 | GET    | `/pets?search=`                    | Lista zwierząt, wyszukiwanie po imieniu | ✔    | ✅     |
 | POST   | `/pets`                            | Dodanie zwierzęcia                      | ✔    | ✅     |
 | GET    | `/pets/:id`                        | Szczegóły zwierzęcia                    | ✔    | ✅     |
@@ -112,7 +122,7 @@ Odpowiedź `200`:
 }
 ```
 
-Token JWT jest ważny przez `JWT_EXPIRES_IN` (domyślnie 2h). Frontend dołącza go do kolejnych
+Token JWT jest ważny przez `JWT_EXPIRES_IN` (domyślnie 1d). Frontend dołącza go do kolejnych
 żądań: `Authorization: Bearer <token>`.
 
 Błędy:
@@ -121,6 +131,7 @@ Błędy:
 | --- | ------------------------------------------------------------------------------------------- |
 | 400 | Brak e-maila lub hasła                                                                      |
 | 401 | Złe hasło **lub** brak konta – ten sam komunikat celowo (nie zdradzamy, czy konto istnieje) |
+| 429 | Zbyt wiele nieudanych prób z tego adresu IP (patrz 6.1)                                     |
 
 ### GET /auth/me ✅
 
@@ -133,7 +144,30 @@ Odpowiedź `200`:
 { "user": { "id": 2, "email": "anna@example.com", "createdAt": "2026-10-28 07:20:16" } }
 ```
 
-Błędy: `401` – brak tokenu, token nieważny/wygasły lub konto usunięte.
+Błędy: `401` – brak tokenu, token nieważny/wygasły, konto usunięte lub hasło zmienione po
+wydaniu tokenu.
+
+### PUT /auth/password ✅
+
+Wymaga tokenu. Treść żądania:
+
+```json
+{ "currentPassword": "Haslo1234", "newPassword": "NoweHaslo99" }
+```
+
+Odpowiedź `200`: `{ "message": "Hasło zostało zmienione.", "token": "eyJ…" }`. Zmiana hasła
+**unieważnia wszystkie wcześniej wydane tokeny** (także ten użyty w żądaniu) – np. sesje na innych
+urządzeniach dostaną `401`. Bieżąca sesja powinna zastąpić token tym z odpowiedzi.
+
+Błędy `400` (z `details`): `newPassword` – te same reguły co przy rejestracji albo hasło takie
+samo jak obecne; `currentPassword` – brak lub nieprawidłowe hasło. Złe obecne hasło to celowo
+`400`, a nie `401` – `401` oznacza wygasłą sesję i frontend wylogowuje wtedy użytkownika.
+
+### DELETE /auth/me ✅
+
+Wymaga tokenu i potwierdzenia hasłem: `{ "password": "Haslo1234" }`. Usuwa konto razem ze
+wszystkimi zwierzętami i wizytami (`ON DELETE CASCADE`). Odpowiedź `204`. Złe hasło → `400`
+z `details.password`.
 
 ### Wylogowanie (PU-05)
 
@@ -164,16 +198,20 @@ użytkownika**. Cudze lub nieistniejące zwierzę → `404 { "error": "Nie znale
 ```
 
 `visitCount` – liczba wszystkich wizyt, `nextVisit` – najwcześniejsza wizyta o statusie
-`planned` (albo `null`). Pola wyliczane, tylko do odczytu.
+`planned`, która jeszcze się nie odbyła (albo `null`; zaległe wizyty się nie liczą). Pola
+wyliczane, tylko do odczytu.
 
 #### Pola wejściowe (POST, PUT)
+
+\* „Dzisiaj” liczone jest wg najpóźniejszej strefy czasowej (UTC+14), żeby dzisiejsza data
+użytkownika była zawsze akceptowana, także tuż po północy czasu polskiego.
 
 | Pole        | Wymagane | Reguły                                                 |
 | ----------- | -------- | ------------------------------------------------------ |
 | `name`      | tak      | tekst, maks. 50 znaków (spacje na brzegach są usuwane) |
 | `species`   | tak      | tekst, maks. 50 znaków                                 |
 | `breed`     | nie      | tekst, maks. 50 znaków                                 |
-| `birthDate` | nie      | `RRRR-MM-DD`, istniejąca data, nie z przyszłości       |
+| `birthDate` | nie      | `RRRR-MM-DD`, istniejąca data, nie z przyszłości \*    |
 | `weight`    | nie      | liczba > 0 i ≤ 1000 (kg), zaokrąglana do 2 miejsc      |
 | `notes`     | nie      | tekst, maks. 1000 znaków                               |
 
@@ -182,14 +220,14 @@ pominięte zostanie wyczyszczone.
 
 #### Endpointy
 
-| Żądanie               | Odpowiedź                                                                    |
-| --------------------- | ---------------------------------------------------------------------------- |
-| `GET /pets`           | `200 { "pets": [ … ], "total": 2 }` – sortowane po imieniu                   |
-| `GET /pets?search=re` | jak wyżej, tylko imiona zawierające frazę (bez rozróżniania wielkości liter) |
-| `GET /pets/:id`       | `200 { "pet": { … } }`                                                       |
-| `POST /pets`          | `201 { "pet": { … } }`                                                       |
-| `PUT /pets/:id`       | `200 { "pet": { … } }`                                                       |
-| `DELETE /pets/:id`    | `204` – usuwa też wszystkie wizyty zwierzęcia                                |
+| Żądanie               | Odpowiedź                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------- |
+| `GET /pets`           | `200 { "pets": [ … ], "total": 2 }` – sortowane po imieniu wg polskiego alfabetu            |
+| `GET /pets?search=re` | jak wyżej, tylko imiona zawierające frazę (bez rozróżniania wielkości liter, także `Ł`/`ł`) |
+| `GET /pets/:id`       | `200 { "pet": { … } }`                                                                      |
+| `POST /pets`          | `201 { "pet": { … } }`                                                                      |
+| `PUT /pets/:id`       | `200 { "pet": { … } }`                                                                      |
+| `DELETE /pets/:id`    | `204` – usuwa też wszystkie wizyty zwierzęcia                                               |
 
 Błąd walidacji (`400`):
 
@@ -286,9 +324,13 @@ Dane do panelu głównego zalogowanego użytkownika. Odpowiedź `200`:
 {
   "petCount": 2,
   "plannedVisitCount": 2,
+  "overdueVisitCount": 0,
   "doneVisitCount": 1,
   "nextVisit": { "id": 2, "petName": "Rex", "visitDateTime": "2026-11-15T16:30", "…": "…" }
 }
 ```
 
-`nextVisit` – najwcześniejsza wizyta o statusie `planned` (pełny obiekt wizyty) albo `null`.
+`nextVisit` – najwcześniejsza wizyta o statusie `planned`, która jeszcze się nie odbyła (pełny
+obiekt wizyty) albo `null`. `overdueVisitCount` – liczba zaległych wizyt: `planned` z datą
+w przeszłości (wliczone też w `plannedVisitCount`). „Teraz” to lokalny czas serwera – daty wizyt
+są zapisane jako czas lokalny bez strefy.

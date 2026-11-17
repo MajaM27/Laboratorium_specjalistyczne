@@ -34,6 +34,26 @@ Content-Type: application/json
 GET {{api}}/auth/me
 Authorization: Bearer {{login.response.body.token}}
 
+### Logowanie złym hasłem – po 10 nieudanych próbach z jednego IP (15 min) oczekiwane 429
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "demo@petcare.pl", "password": "zle-haslo1" }
+
+### Zmiana hasła – zwraca nowy token, stare tokeny przestają działać (złe obecne hasło → 400)
+PUT {{api}}/auth/password
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "currentPassword": "Demo1234", "newPassword": "NoweDemo123" }
+
+### Usunięcie konta razem ze zwierzętami i wizytami (UWAGA: nieodwracalne; złe hasło → 400)
+DELETE {{api}}/auth/me
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{ "password": "Demo1234" }
+
 ### ===== Zwierzęta (PU-03) – wymagają tokenu z żądania "login" =====
 
 ### Lista zwierząt

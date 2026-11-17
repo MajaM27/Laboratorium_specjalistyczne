@@ -17,7 +17,7 @@
     "dev:web": "npm run dev -w frontend",
     "build": "npm run build -w frontend",
     "start": "npm run start -w backend",
-    "test": "npm run test -w backend",
+    "test": "npm run test -w backend && npm run test -w frontend",
     "db:init": "npm run db:init -w backend",
     "db:seed": "npm run db:seed -w backend",
     "db:reset": "npm run db:reset -w backend",

@@ -11,25 +11,31 @@ flowchart LR
 ```
 
 - W trybie deweloperskim Vite przekazuje żądania `/api/*` do backendu (proxy), więc frontend
-  i API działają jak jedna aplikacja.
+  i API działają jak jedna aplikacja. W produkcji backend sam serwuje zbudowany frontend
+  (`middleware/frontend.js`, patrz [07-uruchomienie.md](07-uruchomienie.md#76-wersja-produkcyjna)).
 - Autoryzacja: po zalogowaniu backend wydaje token **JWT**; frontend dołącza go do każdego
   żądania w nagłówku `Authorization: Bearer <token>`.
 
 ## 4.2 Backend (`backend/src`)
 
-| Plik / katalog               | Odpowiedzialność                                                    |
-| ---------------------------- | ------------------------------------------------------------------- |
-| `server.js`                  | Start: schemat bazy, serwer HTTP, łagodne zamknięcie (Ctrl+C)       |
-| `app.js`                     | Konfiguracja Express: CORS, JSON (maks. 100 kB), trasy, błędy       |
-| `config.js`                  | Odczyt i walidacja zmiennych środowiskowych (`.env`)                |
-| `db/index.js`                | Połączenie z SQLite, włączenie kluczy obcych                        |
-| `db/schema.sql`              | Definicja tabel (idempotentna – `CREATE TABLE IF NOT EXISTS`)       |
-| `db/init.js`, `seed.js`      | Skrypty: tworzenie/reset bazy, dane testowe                         |
-| `routes/`                    | Trasy API – jeden plik na moduł                                     |
-| `middleware/auth.js`         | `requireAuth` (weryfikacja JWT, tylko HS256), `signToken`           |
-| `middleware/errorHandler.js` | Obsługa błędów (400 zły JSON, 404, 413, 500)                        |
-| `utils/validation.js`        | Walidacja pól (e-mail, hasło, zwierzę, wizyta), `assertValid` → 400 |
-| `utils/httpError.js`         | Klasa błędu z kodem HTTP                                            |
+| Plik / katalog                  | Odpowiedzialność                                                    |
+| ------------------------------- | ------------------------------------------------------------------- |
+| `server.js`                     | Start: schemat bazy, serwer HTTP, łagodne zamknięcie (Ctrl+C)       |
+| `app.js`                        | Konfiguracja Express: CORS, JSON (maks. 100 kB), trasy, błędy       |
+| `config.js`                     | Odczyt i walidacja zmiennych środowiskowych (`.env`)                |
+| `db/index.js`                   | Połączenie z SQLite, włączenie kluczy obcych                        |
+| `db/schema.sql`                 | Definicja tabel (idempotentna – `CREATE TABLE IF NOT EXISTS`)       |
+| `db/init.js`, `seed.js`         | Skrypty: tworzenie/reset bazy, dane testowe                         |
+| `routes/`                       | Trasy API – jeden plik na moduł                                     |
+| `middleware/auth.js`            | `requireAuth` (weryfikacja JWT, tylko HS256), `signToken`           |
+| `middleware/errorHandler.js`    | Obsługa błędów (400 zły JSON, 404, 413, 500)                        |
+| `middleware/rateLimit.js`       | Limit nieudanych prób logowania/hasła z jednego IP → 429            |
+| `middleware/securityHeaders.js` | Nagłówki bezpieczeństwa (nosniff, X-Frame-Options; CSP dla API)     |
+| `middleware/frontend.js`        | Produkcja: pliki `frontend/dist` + `index.html` dla tras Reacta     |
+| `db/migrations.js`              | Migracje istniejących baz (`PRAGMA user_version`)                   |
+| `utils/validation.js`           | Walidacja pól (e-mail, hasło, zwierzę, wizyta), `assertValid` → 400 |
+| `utils/httpError.js`            | Klasa błędu z kodem HTTP                                            |
+| `utils/time.js`                 | Bieżący czas lokalny serwera, „najpóźniejsze dzisiaj” (UTC+14)      |
 
 Język komunikatów API ustala middleware w `app.js` (`req.lang` z `Accept-Language`, domyślnie
 `pl`); `errorHandler` tłumaczy `error` i `details` przez `utils/i18n.js` (słownik PL → EN).
@@ -76,7 +82,15 @@ przeniesionego do zwykłego CSS (bez Tailwinda) i dopasowanego do modelu danych 
 ### Zasady
 
 - Niezalogowany użytkownik na trasie chronionej → przekierowanie do `/login` (po zalogowaniu
-  powrót na żądaną stronę). Odpowiedź `401` z API (wygasły token) wylogowuje automatycznie.
+  powrót na żądaną stronę, razem z parametrami adresu, np. `?petId=`). Odpowiedź `401` z API
+  (wygasły token) wylogowuje automatycznie i pokazuje na ekranie logowania komunikat
+  „Sesja wygasła”. Wylogowanie lub zalogowanie w innej karcie jest synchronizowane przez
+  zdarzenie `storage`.
+- Pola formularzy (`Field`) wiążą komunikat błędu z polem (`aria-invalid`, `aria-describedby`);
+  przyciski z samą ikoną mają `aria-label`.
+- Wizyta zaplanowana z datą w przeszłości jest oznaczana jako **zaległa** („Po terminie”) i nie
+  jest „najbliższą wizytą”. Oznaczenie jako zakończonej wizyty z przyszłości wymaga potwierdzenia,
+  a formularz ostrzega o statusie „Zakończona” z przyszłą datą.
 - Formularze walidują dane przed wysłaniem; błędy pól z backendu (`details`) są wyświetlane
   pod odpowiednimi polami.
 - Usunięcie zwierzęcia lub wizyty wymaga potwierdzenia (`window.confirm`).
@@ -102,3 +116,26 @@ przeniesionego do zwykłego CSS (bez Tailwinda) i dopasowanego do modelu danych 
 - Sekret JWT tylko w `backend/.env` (plik poza repozytorium).
 - Zapytania SQL wyłącznie parametryzowane – ochrona przed SQL injection.
 - Każdy zasób sprawdzany pod kątem właściciela; cudzy zasób → 404.
+- **Limit nieudanych prób** (`middleware/rateLimit.js`): logowanie, rejestracja, zmiana hasła
+  i usunięcie konta – po 10 odpowiedziach 4xx z jednego IP w ciągu 15 minut API zwraca `429`
+  z `Retry-After`. Udane żądania nie są liczone, więc zwykły użytkownik nie jest blokowany.
+  Licznik jest w pamięci procesu (wystarczy przy jednej instancji; reset po restarcie serwera).
+- **Nagłówki bezpieczeństwa** na każdej odpowiedzi (`middleware/securityHeaders.js`):
+  `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`;
+  odpowiedzi `/api` dodatkowo `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`.
+- Haszowanie bcrypt jest asynchroniczne – nie blokuje obsługi innych żądań.
+- **Zmiana hasła wylogowuje pozostałe sesje**: token zawiera `ver` = `users.token_version`;
+  zmiana hasła zwiększa wersję, więc starsze tokeny są odrzucane (`401`), a bieżąca sesja
+  dostaje nowy token w odpowiedzi.
+- Zmiana hasła i usunięcie konta wymagają podania obecnego hasła; złe hasło to `400` (błąd pola),
+  a nie `401`, żeby frontend nie wylogował użytkownika.
+- **Token w `localStorage` – świadomy kompromis.** Zaleta: prosty klient i brak problemów z CSRF
+  (token nie jest wysyłany automatycznie jak ciasteczko). Wada: skrypt wstrzyknięty na stronę (XSS)
+  mógłby odczytać token. Ryzyko ograniczają: React domyślnie escapuje dane w widokach, aplikacja
+  nie używa `dangerouslySetInnerHTML` ani skryptów z zewnętrznych domen, token ma ograniczoną
+  ważność (`JWT_EXPIRES_IN`, domyślnie 1 dzień). Bezpieczniejszą alternatywą byłoby ciasteczko
+  `HttpOnly` + `SameSite` (wymaga ochrony CSRF) – uznaliśmy je za zbyt rozbudowane na ten projekt.
+- **Czas i strefy czasowe.** Daty wizyt są zapisane jako czas lokalny bez strefy
+  (`YYYY-MM-DDTHH:MM`), dlatego „teraz” (najbliższa / zaległa wizyta) to lokalny czas serwera –
+  zakładamy, że serwer i użytkownicy są w tej samej strefie. Data urodzenia „z przyszłości” jest
+  sprawdzana wg najpóźniejszej strefy (UTC+14), żeby „dzisiaj” użytkownika zawsze było poprawne.

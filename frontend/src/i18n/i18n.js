@@ -17,6 +17,11 @@ function readStored() {
 
 let current = readStored() ?? 'pl';
 
+// Atrybut lang na <html> (czytniki ekranu, dzielenie wyrazów). Poza przeglądarką (testy) pomijamy.
+function setDocumentLanguage(lang) {
+  if (typeof document !== 'undefined') document.documentElement.lang = lang;
+}
+
 export function getLanguage() {
   return current;
 }
@@ -28,7 +33,7 @@ export function getLocale(lang = current) {
 export function setLanguage(lang) {
   if (!LANGUAGES.includes(lang)) return;
   current = lang;
-  document.documentElement.lang = lang;
+  setDocumentLanguage(lang);
   try {
     localStorage.setItem(STORAGE_KEY, lang);
   } catch {
@@ -44,4 +49,4 @@ export function translate(key, params = {}, lang = current) {
   return value.replace(/\{(\w+)\}/g, (_, name) => params[name] ?? '');
 }
 
-document.documentElement.lang = current;
+setDocumentLanguage(current);

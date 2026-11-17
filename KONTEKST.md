@@ -32,7 +32,7 @@ backend/              API (Express)
   src/config.js       odczyt zmiennych z backend/.env
   src/app.js          konfiguracja Express, montowanie tras
   src/server.js       punkt startowy
-  src/db/             połączenie, schema.sql, init.js, seed.js
+  src/db/             połączenie, schema.sql, migrations.js, init.js, seed.js
   src/routes/         trasy API (jeden plik na moduł)
   src/middleware/     auth, obsługa błędów
   src/utils/          pomocnicze (HttpError, walidacja)
@@ -45,6 +45,7 @@ frontend/             SPA (React + Vite)
   src/pages/          widoki (strony routingu)
   src/components/     komponenty wielokrotnego użytku
   src/styles/         CSS
+  test/               testy logiki frontendu (node:test, bez przeglądarki)
 docs/                 dokumentacja projektu (aktualizowana na bieżąco)
 ```
 
@@ -61,6 +62,17 @@ docs/                 dokumentacja projektu (aktualizowana na bieżąco)
 7. **Usuwanie kaskadowe**: usunięcie zwierzęcia usuwa jego wizyty.
 8. **Walidacja zawsze na backendzie**; frontend waliduje dodatkowo dla wygody.
 9. **Format błędów API**: `{ "error": "komunikat po polsku", "details": { "pole": "opis" } }`.
+10. **Najbliższa wizyta** = najwcześniejsza `planned` z datą ≥ teraz (lokalny czas serwera);
+    `planned` z datą w przeszłości to wizyta **zaległa** (`overdueVisitCount` w `/stats`).
+11. **Limit nieudanych prób** logowania/hasła: 10 na 15 min z jednego IP → `429`
+    (`AUTH_RATE_LIMIT_*`). Złe hasło przy zmianie hasła/usuwaniu konta → `400`, nie `401`
+    (401 = wygasła sesja, frontend wtedy wylogowuje).
+12. **Zmiana hasła unieważnia stare tokeny** (`users.token_version` w tokenie jako `ver`);
+    bieżąca sesja dostaje nowy token w odpowiedzi.
+13. **Migracje**: `schema.sql` = pełny schemat; zmiany dla istniejących baz w
+    `backend/src/db/migrations.js` (`PRAGMA user_version`, stosowane przy starcie serwera).
+14. **Produkcja**: `npm run build` + `NODE_ENV=production npm start` – backend serwuje też
+    `frontend/dist` (jeden adres, bez CORS).
 
 ## Konwencje
 

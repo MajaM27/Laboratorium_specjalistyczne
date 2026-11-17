@@ -8,6 +8,8 @@ process.env.NODE_ENV = 'test';
 process.env.DATABASE_PATH = ':memory:';
 process.env.JWT_SECRET = 'sekret-tylko-do-testow';
 process.env.BCRYPT_ROUNDS = '4';
+// Limit prób logowania testujemy osobno (własna instancja aplikacji z niskim limitem)
+process.env.AUTH_RATE_LIMIT_MAX = '1000000';
 
 const { createApp } = await import('../src/app.js');
 const { db, applySchema } = await import('../src/db/index.js');
@@ -27,7 +29,7 @@ after(async () => {
   db.close();
 });
 
-async function api(method, path, { token, body, rawBody, headers = {} } = {}) {
+async function api(method, path, { token, body, rawBody, headers = {}, base = baseUrl } = {}) {
   const init = { method, headers: { ...headers } };
   if (token) init.headers.Authorization = `Bearer ${token}`;
   if (body !== undefined) {
@@ -38,7 +40,7 @@ async function api(method, path, { token, body, rawBody, headers = {} } = {}) {
     init.headers['Content-Type'] = 'application/json';
     init.body = rawBody;
   }
-  const res = await fetch(`${baseUrl}${path}`, init);
+  const res = await fetch(`${base}${path}`, init);
   const text = await res.text();
   return { status: res.status, headers: res.headers, body: text ? JSON.parse(text) : null };
 }
@@ -68,7 +70,7 @@ async function createVisit(token, petId, data = {}) {
     token,
     body: {
       petId,
-      visitDateTime: '2026-12-01T10:00',
+      visitDateTime: '2099-12-01T10:00',
       clinic: 'VetCare',
       purpose: 'Kontrola',
       ...data,
@@ -96,6 +98,14 @@ describe('Ogólne', () => {
     const res = await api('POST', '/auth/login', { rawBody: '{"email":' });
     assert.equal(res.status, 400);
     assert.match(res.body.error, /JSON/);
+  });
+
+  test('nagłówki bezpieczeństwa', async () => {
+    const res = await api('GET', '/health');
+    assert.equal(res.headers.get('x-content-type-options'), 'nosniff');
+    assert.equal(res.headers.get('x-frame-options'), 'DENY');
+    assert.match(res.headers.get('content-security-policy') ?? '', /default-src 'none'/);
+    assert.equal(res.headers.get('x-powered-by'), null);
   });
 
   test('za duża treść żądania → 413', async () => {
@@ -190,6 +200,183 @@ describe('Autoryzacja (PU-01, PU-02)', () => {
   });
 });
 
+describe('Konto: zmiana hasła i usunięcie', () => {
+  test('zmiana hasła – stare przestaje działać, nowe działa', async () => {
+    const user = await createUser();
+    const res = await api('PUT', '/auth/password', {
+      token: user.token,
+      body: { currentPassword: 'Haslo1234', newPassword: 'NoweHaslo99' },
+    });
+    assert.equal(res.status, 200);
+    assert.ok(res.body.message);
+
+    // Stary token (np. na innym urządzeniu) przestaje działać, nowy z odpowiedzi działa
+    assert.equal((await api('GET', '/auth/me', { token: user.token })).status, 401);
+    assert.equal((await api('GET', '/auth/me', { token: res.body.token })).status, 200);
+
+    const oldLogin = { email: user.email, password: 'Haslo1234' };
+    assert.equal((await api('POST', '/auth/login', { body: oldLogin })).status, 401);
+    const newLogin = { email: user.email, password: 'NoweHaslo99' };
+    assert.equal((await api('POST', '/auth/login', { body: newLogin })).status, 200);
+  });
+
+  test('zmiana hasła – błędy pól, złe obecne hasło → 400 (nie 401)', async () => {
+    const { token } = await createUser();
+    const wrong = await api('PUT', '/auth/password', {
+      token,
+      body: { currentPassword: 'Zle12345', newPassword: 'NoweHaslo99' },
+    });
+    assert.equal(wrong.status, 400);
+    assert.ok(wrong.body.details.currentPassword);
+
+    const weak = await api('PUT', '/auth/password', {
+      token,
+      body: { currentPassword: 'Haslo1234', newPassword: 'krotkie' },
+    });
+    assert.equal(weak.status, 400);
+    assert.ok(weak.body.details.newPassword);
+
+    const same = await api('PUT', '/auth/password', {
+      token,
+      body: { currentPassword: 'Haslo1234', newPassword: 'Haslo1234' },
+    });
+    assert.equal(same.status, 400);
+    assert.ok(same.body.details.newPassword);
+
+    assert.equal((await api('PUT', '/auth/password', { body: {} })).status, 401);
+  });
+
+  test('usunięcie konta usuwa zwierzęta i wizyty, token przestaje działać', async () => {
+    const user = await createUser();
+    const pet = await createPet(user.token);
+    await createVisit(user.token, pet.id);
+
+    const wrong = await api('DELETE', '/auth/me', { token: user.token, body: { password: 'x' } });
+    assert.equal(wrong.status, 400);
+    assert.ok(wrong.body.details.password);
+
+    const res = await api('DELETE', '/auth/me', {
+      token: user.token,
+      body: { password: 'Haslo1234' },
+    });
+    assert.equal(res.status, 204);
+    assert.equal((await api('GET', '/auth/me', { token: user.token })).status, 401);
+    const left = db.prepare('SELECT COUNT(*) AS c FROM pets WHERE user_id = ?').get(user.id);
+    assert.equal(left.c, 0);
+  });
+});
+
+describe('Frontend w wersji produkcyjnej', () => {
+  let prodServer;
+  let prodUrl;
+  let distDir;
+
+  before(async () => {
+    const fs = await import('node:fs');
+    const os = await import('node:os');
+    const path = await import('node:path');
+    distDir = fs.mkdtempSync(path.join(os.tmpdir(), 'petcare-dist-'));
+    fs.mkdirSync(path.join(distDir, 'assets'));
+    fs.writeFileSync(path.join(distDir, 'index.html'), '<!doctype html><title>PetCare</title>');
+    fs.writeFileSync(path.join(distDir, 'assets', 'app-123.js'), 'console.log(1)');
+    prodServer = createApp({ frontendDist: distDir }).listen(0);
+    await new Promise((resolve) => prodServer.once('listening', resolve));
+    prodUrl = `http://127.0.0.1:${prodServer.address().port}`;
+  });
+
+  after(async () => {
+    await new Promise((resolve) => prodServer.close(resolve));
+    const fs = await import('node:fs');
+    fs.rmSync(distDir, { recursive: true, force: true });
+  });
+
+  test('pliki statyczne, index.html dla tras Reacta, API bez zmian', async () => {
+    const asset = await fetch(`${prodUrl}/assets/app-123.js`);
+    assert.equal(asset.status, 200);
+    assert.match(asset.headers.get('cache-control'), /immutable/);
+
+    const route = await fetch(`${prodUrl}/pets/3`);
+    assert.equal(route.status, 200);
+    assert.match(await route.text(), /<title>PetCare/);
+    assert.equal(route.headers.get('x-frame-options'), 'DENY');
+    // Ścisła CSP tylko dla API – strona aplikacji musi móc ładować swoje skrypty
+    assert.equal(route.headers.get('content-security-policy'), null);
+
+    const missingApi = await fetch(`${prodUrl}/api/nie-ma`);
+    assert.equal(missingApi.status, 404);
+    assert.ok((await missingApi.json()).error);
+  });
+});
+
+describe('Migracje bazy', () => {
+  test('stara baza bez token_version dostaje kolumnę, ponowne uruchomienie nic nie psuje', async () => {
+    const { default: Database } = await import('better-sqlite3');
+    const { migrate } = await import('../src/db/migrations.js');
+    const old = new Database(':memory:');
+    old.exec(`CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT, password_hash TEXT);
+              INSERT INTO users (email, password_hash) VALUES ('a@test.pl', 'x');`);
+
+    migrate(old);
+    migrate(old);
+    const columns = old
+      .prepare('PRAGMA table_info(users)')
+      .all()
+      .map((c) => c.name);
+    assert.ok(columns.includes('token_version'));
+    assert.equal(old.prepare('SELECT token_version FROM users').get().token_version, 0);
+    assert.equal(old.pragma('user_version', { simple: true }), 1);
+    old.close();
+  });
+
+  test('nowa baza ma pełny schemat i aktualną wersję', () => {
+    assert.equal(db.pragma('user_version', { simple: true }), 1);
+  });
+});
+
+describe('Limit nieudanych prób logowania', () => {
+  let limitedServer;
+  let limitedUrl;
+
+  before(async () => {
+    limitedServer = createApp({ authRateLimit: { max: 3, windowMs: 60_000 } }).listen(0);
+    await new Promise((resolve) => limitedServer.once('listening', resolve));
+    limitedUrl = `http://127.0.0.1:${limitedServer.address().port}/api`;
+  });
+
+  after(() => new Promise((resolve) => limitedServer.close(resolve)));
+
+  test('po 3 nieudanych próbach → 429 z Retry-After, także dla poprawnego hasła', async () => {
+    const user = await createUser();
+    const bad = { email: user.email, password: 'Zle12345' };
+    for (let i = 0; i < 3; i += 1) {
+      const res = await api('POST', '/auth/login', { body: bad, base: limitedUrl });
+      assert.equal(res.status, 401);
+    }
+    const blocked = await api('POST', '/auth/login', {
+      body: { email: user.email, password: 'Haslo1234' },
+      base: limitedUrl,
+    });
+    assert.equal(blocked.status, 429);
+    assert.ok(Number(blocked.headers.get('retry-after')) > 0);
+    assert.ok(blocked.body.error);
+  });
+
+  test('udane logowania nie są liczone', async () => {
+    const app = createApp({ authRateLimit: { max: 2, windowMs: 60_000 } }).listen(0);
+    await new Promise((resolve) => app.once('listening', resolve));
+    const url = `http://127.0.0.1:${app.address().port}/api`;
+    const user = await createUser();
+    for (let i = 0; i < 4; i += 1) {
+      const res = await api('POST', '/auth/login', {
+        body: { email: user.email, password: 'Haslo1234' },
+        base: url,
+      });
+      assert.equal(res.status, 200);
+    }
+    await new Promise((resolve) => app.close(resolve));
+  });
+});
+
 describe('Zwierzęta (PU-03)', () => {
   let owner;
   let other;
@@ -262,6 +449,16 @@ describe('Zwierzęta (PU-03)', () => {
     assert.ok(res.body.details.birthDate);
   });
 
+  test('data urodzenia „dzisiaj” jest akceptowana w każdej strefie czasowej', async () => {
+    // Najpóźniejsze „dzisiaj” na świecie (UTC+14) – np. w Polsce tuż po północy
+    const today = new Date(Date.now() + 14 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const res = await api('POST', '/pets', {
+      token: owner.token,
+      body: { name: 'Mały', species: 'Kot', birthDate: today },
+    });
+    assert.equal(res.status, 201, JSON.stringify(res.body));
+  });
+
   test('waga innego typu niż liczba/tekst → 400', async () => {
     for (const weight of [true, [5], { kg: 5 }]) {
       const res = await api('POST', '/pets', {
@@ -298,6 +495,25 @@ describe('Zwierzęta (PU-03)', () => {
     assert.deepEqual(
       percent.body.pets.map((p) => p.name),
       ['Max%'],
+    );
+  });
+
+  test('wyszukiwanie i sortowanie z polskimi znakami', async () => {
+    const user = await createUser();
+    for (const name of ['Żaba', 'Łatka', 'Lusia', 'Zorro', 'ćma']) {
+      await createPet(user.token, { name });
+    }
+    const all = await api('GET', '/pets', { token: user.token });
+    assert.deepEqual(
+      all.body.pets.map((p) => p.name),
+      ['ćma', 'Lusia', 'Łatka', 'Zorro', 'Żaba'],
+    );
+    const found = await api('GET', `/pets?search=${encodeURIComponent('ŁAT')}`, {
+      token: user.token,
+    });
+    assert.deepEqual(
+      found.body.pets.map((p) => p.name),
+      ['Łatka'],
     );
   });
 
@@ -347,7 +563,7 @@ describe('Wizyty (PU-04)', () => {
     assert.equal(visit.status, 'planned');
     assert.equal(visit.clinic, 'Klinika');
     assert.equal(visit.petName, 'Luna');
-    assert.equal(visit.visitDateTime, '2026-12-01T10:00');
+    assert.equal(visit.visitDateTime, '2099-12-01T10:00');
   });
 
   test('walidacja danych wizyty', async () => {
@@ -368,7 +584,7 @@ describe('Wizyty (PU-04)', () => {
   test('petId innego typu niż liczba/tekst → 400', async () => {
     const res = await api('POST', '/visits', {
       token: owner.token,
-      body: { petId: true, visitDateTime: '2026-12-01T10:00', clinic: 'A', purpose: 'B' },
+      body: { petId: true, visitDateTime: '2099-12-01T10:00', clinic: 'A', purpose: 'B' },
     });
     assert.equal(res.status, 400);
     assert.ok(res.body.details.petId);
@@ -377,7 +593,7 @@ describe('Wizyty (PU-04)', () => {
   test('wizyta dla cudzego zwierzęcia → 400 z błędem pola petId', async () => {
     const res = await api('POST', '/visits', {
       token: other.token,
-      body: { petId: pet.id, visitDateTime: '2026-12-01T10:00', clinic: 'A', purpose: 'B' },
+      body: { petId: pet.id, visitDateTime: '2099-12-01T10:00', clinic: 'A', purpose: 'B' },
     });
     assert.equal(res.status, 400);
     assert.ok(res.body.details.petId);
@@ -423,15 +639,15 @@ describe('Wizyty (PU-04)', () => {
     const user = await createUser();
     const a = await createPet(user.token, { name: 'A' });
     const b = await createPet(user.token, { name: 'B' });
-    await createVisit(user.token, a.id, { visitDateTime: '2026-11-20T09:00' });
-    await createVisit(user.token, b.id, { visitDateTime: '2026-11-15T09:00' });
+    await createVisit(user.token, a.id, { visitDateTime: '2099-11-20T09:00' });
+    await createVisit(user.token, b.id, { visitDateTime: '2099-11-15T09:00' });
     await createVisit(user.token, a.id, { visitDateTime: '2026-03-01T09:00', status: 'done' });
     await createVisit(user.token, a.id, { visitDateTime: '2026-05-01T23:59', status: 'done' });
 
     const planned = await api('GET', '/visits?status=planned', { token: user.token });
     assert.deepEqual(
       planned.body.visits.map((v) => v.visitDateTime),
-      ['2026-11-15T09:00', '2026-11-20T09:00'],
+      ['2099-11-15T09:00', '2099-11-20T09:00'],
     );
 
     const done = await api('GET', '/visits?status=done', { token: user.token });
@@ -466,12 +682,24 @@ describe('Wizyty (PU-04)', () => {
   test('lista zwierząt pokazuje liczbę wizyt i najbliższą zaplanowaną', async () => {
     const user = await createUser();
     const p = await createPet(user.token);
-    await createVisit(user.token, p.id, { visitDateTime: '2026-12-10T10:00' });
-    await createVisit(user.token, p.id, { visitDateTime: '2026-12-05T10:00' });
+    await createVisit(user.token, p.id, { visitDateTime: '2099-12-10T10:00' });
+    await createVisit(user.token, p.id, { visitDateTime: '2099-12-05T10:00' });
     await createVisit(user.token, p.id, { visitDateTime: '2026-01-01T10:00', status: 'done' });
     const res = await api('GET', `/pets/${p.id}`, { token: user.token });
     assert.equal(res.body.pet.visitCount, 3);
-    assert.equal(res.body.pet.nextVisit, '2026-12-05T10:00');
+    assert.equal(res.body.pet.nextVisit, '2099-12-05T10:00');
+  });
+
+  test('zaległa wizyta (planned w przeszłości) nie jest „najbliższą”', async () => {
+    const user = await createUser();
+    const p = await createPet(user.token);
+    await createVisit(user.token, p.id, { visitDateTime: '2000-01-01T10:00' });
+    const onlyOverdue = await api('GET', `/pets/${p.id}`, { token: user.token });
+    assert.equal(onlyOverdue.body.pet.nextVisit, null);
+
+    await createVisit(user.token, p.id, { visitDateTime: '2099-01-01T10:00' });
+    const list = await api('GET', '/pets', { token: user.token });
+    assert.equal(list.body.pets[0].nextVisit, '2099-01-01T10:00');
   });
 });
 
@@ -483,6 +711,7 @@ describe('Statystyki', () => {
     assert.deepEqual(res.body, {
       petCount: 0,
       plannedVisitCount: 0,
+      overdueVisitCount: 0,
       doneVisitCount: 0,
       nextVisit: null,
     });
@@ -493,8 +722,8 @@ describe('Statystyki', () => {
     const intruder = await createUser();
     const p = await createPet(user.token);
     await createPet(user.token, { name: 'Drugi' });
-    await createVisit(user.token, p.id, { visitDateTime: '2026-12-10T10:00' });
-    await createVisit(user.token, p.id, { visitDateTime: '2026-12-01T10:00' });
+    await createVisit(user.token, p.id, { visitDateTime: '2099-12-10T10:00' });
+    await createVisit(user.token, p.id, { visitDateTime: '2099-12-01T10:00' });
     await createVisit(user.token, p.id, { status: 'done' });
     const ip = await createPet(intruder.token);
     await createVisit(intruder.token, ip.id, { visitDateTime: '2026-01-01T00:00' });
@@ -503,7 +732,20 @@ describe('Statystyki', () => {
     assert.equal(res.body.petCount, 2);
     assert.equal(res.body.plannedVisitCount, 2);
     assert.equal(res.body.doneVisitCount, 1);
-    assert.equal(res.body.nextVisit.visitDateTime, '2026-12-01T10:00');
+    assert.equal(res.body.nextVisit.visitDateTime, '2099-12-01T10:00');
+    assert.equal(res.body.overdueVisitCount, 0);
+  });
+
+  test('zaległe wizyty liczone osobno, najbliższa tylko z przyszłości', async () => {
+    const user = await createUser();
+    const p = await createPet(user.token);
+    await createVisit(user.token, p.id, { visitDateTime: '2000-01-01T10:00' });
+    await createVisit(user.token, p.id, { visitDateTime: '2099-06-01T10:00' });
+
+    const res = await api('GET', '/stats', { token: user.token });
+    assert.equal(res.body.plannedVisitCount, 2);
+    assert.equal(res.body.overdueVisitCount, 1);
+    assert.equal(res.body.nextVisit.visitDateTime, '2099-06-01T10:00');
   });
 });
 

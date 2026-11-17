@@ -3,15 +3,18 @@ import { db } from '../db/index.js';
 import { HttpError } from '../utils/httpError.js';
 import { parsePetInput } from '../utils/validation.js';
 import { requireAuth } from '../middleware/auth.js';
+import { localNowISO } from '../utils/time.js';
 
 const router = Router();
 router.use(requireAuth);
 
+// Najbliższa wizyta = najwcześniejsza zaplanowana, która jeszcze się nie odbyła (@now).
+// Zaległe wizyty (planned z datą w przeszłości) nie są „najbliższe” – frontend oznacza je osobno.
 const PET_COLUMNS = `
   p.id, p.name, p.species, p.breed, p.birth_date, p.weight, p.notes, p.created_at, p.updated_at,
   (SELECT COUNT(*) FROM visits v WHERE v.pet_id = p.id) AS visit_count,
   (SELECT MIN(v.visit_datetime) FROM visits v
-    WHERE v.pet_id = p.id AND v.status = 'planned') AS next_visit`;
+    WHERE v.pet_id = p.id AND v.status = 'planned' AND v.visit_datetime >= @now) AS next_visit`;
 
 function toPet(row) {
   return {
@@ -34,26 +37,29 @@ function findOwnPet(userId, rawId) {
   const id = Number(rawId);
   const row = Number.isInteger(id)
     ? db
-        .prepare(`SELECT ${PET_COLUMNS} FROM pets p WHERE p.id = ? AND p.user_id = ?`)
-        .get(id, userId)
+        .prepare(`SELECT ${PET_COLUMNS} FROM pets p WHERE p.id = @id AND p.user_id = @userId`)
+        .get({ id, userId, now: localNowISO() })
     : undefined;
   if (!row) throw new HttpError(404, 'Nie znaleziono zwierzęcia.');
   return row;
 }
 
 // Lista zwierząt użytkownika, opcjonalnie wyszukiwanie po imieniu: GET /api/pets?search=re
+// Wyszukiwanie bez rozróżniania wielkości liter także dla polskich znaków (pl_lower – db/index.js);
+// instr() szuka fragmentu dosłownie, więc znaki % i _ nie mają specjalnego znaczenia.
+const byPolishName = new Intl.Collator('pl', { sensitivity: 'base' });
+
 router.get('/', (req, res) => {
   const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
-  // Znaki % i _ w wyszukiwanej frazie traktujemy dosłownie
-  const pattern = `%${search.replace(/[\\%_]/g, '\\$&')}%`;
 
   const rows = db
     .prepare(
       `SELECT ${PET_COLUMNS} FROM pets p
-       WHERE p.user_id = ? AND p.name LIKE ? ESCAPE '\\'
-       ORDER BY p.name COLLATE NOCASE`,
+       WHERE p.user_id = @userId AND instr(pl_lower(p.name), pl_lower(@search)) > 0`,
     )
-    .all(req.user.id, pattern);
+    .all({ userId: req.user.id, search, now: localNowISO() });
+  // Sortowanie alfabetyczne wg polskiego alfabetu (Ł po L, Ż na końcu), czego SQLite nie potrafi
+  rows.sort((a, b) => byPolishName.compare(a.name, b.name) || a.id - b.id);
 
   res.json({ pets: rows.map(toPet), total: rows.length });
 });
