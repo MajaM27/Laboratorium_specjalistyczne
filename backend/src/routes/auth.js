@@ -16,23 +16,44 @@ function publicUser(user) {
   return { id: user.id, email: user.email, createdAt: user.created_at };
 }
 
+function emailTaken() {
+  return new HttpError(409, 'Konto z tym adresem e-mail już istnieje.', {
+    email: 'Ten adres e-mail jest już zajęty.',
+  });
+}
+
+// Sprawdza hasło zalogowanego użytkownika (zmiana hasła, usunięcie konta).
+// Złe hasło → 400 z błędem pola, a nie 401 – 401 oznacza wygasłą sesję i wylogowuje we frontendzie.
+async function assertCurrentPassword(userId, password, field) {
+  if (typeof password !== 'string' || password === '') {
+    assertValid({ [field]: 'Hasło jest wymagane.' });
+  }
+  const { password_hash } = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(userId);
+  if (!(await bcrypt.compare(password, password_hash))) {
+    assertValid({ [field]: 'Nieprawidłowe hasło.' });
+  }
+}
+
 // PU-01 – rejestracja
-router.post('/register', (req, res) => {
+// Haszowanie jest asynchroniczne – nie blokuje obsługi innych żądań.
+router.post('/register', async (req, res) => {
   const { email, password } = req.body ?? {};
   assertValid({ email: validateEmail(email), password: validatePassword(password) });
 
   const normalizedEmail = email.trim().toLowerCase();
-  const exists = db.prepare('SELECT 1 FROM users WHERE email = ?').get(normalizedEmail);
-  if (exists) {
-    throw new HttpError(409, 'Konto z tym adresem e-mail już istnieje.', {
-      email: 'Ten adres e-mail jest już zajęty.',
-    });
-  }
+  if (db.prepare('SELECT 1 FROM users WHERE email = ?').get(normalizedEmail)) throw emailTaken();
 
-  const passwordHash = bcrypt.hashSync(password, config.bcryptRounds);
-  const { lastInsertRowid } = db
-    .prepare('INSERT INTO users (email, password_hash) VALUES (?, ?)')
-    .run(normalizedEmail, passwordHash);
+  const passwordHash = await bcrypt.hash(password, config.bcryptRounds);
+  let lastInsertRowid;
+  try {
+    ({ lastInsertRowid } = db
+      .prepare('INSERT INTO users (email, password_hash) VALUES (?, ?)')
+      .run(normalizedEmail, passwordHash));
+  } catch (err) {
+    // Dwie równoczesne rejestracje tego samego adresu – drugą zatrzymuje UNIQUE w bazie
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') throw emailTaken();
+    throw err;
+  }
 
   const user = db
     .prepare('SELECT id, email, created_at FROM users WHERE id = ?')
@@ -44,7 +65,7 @@ router.post('/register', (req, res) => {
 });
 
 // PU-02 – logowanie
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   const { email, password } = req.body ?? {};
   if (typeof email !== 'string' || typeof password !== 'string' || !email || !password) {
     throw new HttpError(400, 'Podaj adres e-mail i hasło.');
@@ -53,7 +74,7 @@ router.post('/login', (req, res) => {
   const user = db
     .prepare('SELECT id, email, password_hash, created_at FROM users WHERE email = ?')
     .get(email.trim().toLowerCase());
-  const passwordOk = bcrypt.compareSync(password, user?.password_hash ?? DUMMY_HASH);
+  const passwordOk = await bcrypt.compare(password, user?.password_hash ?? DUMMY_HASH);
 
   if (!user || !passwordOk) {
     throw new HttpError(401, 'Nieprawidłowy adres e-mail lub hasło.');
@@ -66,6 +87,27 @@ router.post('/login', (req, res) => {
 router.get('/me', requireAuth, (req, res) => {
   const user = db.prepare('SELECT id, email, created_at FROM users WHERE id = ?').get(req.user.id);
   res.json({ user: publicUser(user) });
+});
+
+// Zmiana hasła: { currentPassword, newPassword }
+router.put('/password', requireAuth, async (req, res) => {
+  const { currentPassword, newPassword } = req.body ?? {};
+  assertValid({ newPassword: validatePassword(newPassword) });
+  await assertCurrentPassword(req.user.id, currentPassword, 'currentPassword');
+  if (currentPassword === newPassword) {
+    assertValid({ newPassword: 'Nowe hasło musi różnić się od obecnego.' });
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, config.bcryptRounds);
+  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(passwordHash, req.user.id);
+  res.json({ message: translate('Hasło zostało zmienione.', req.lang) });
+});
+
+// Usunięcie konta razem ze zwierzętami i wizytami (ON DELETE CASCADE): { password }
+router.delete('/me', requireAuth, async (req, res) => {
+  await assertCurrentPassword(req.user.id, req.body?.password, 'password');
+  db.prepare('DELETE FROM users WHERE id = ?').run(req.user.id);
+  res.status(204).end();
 });
 
 export default router;

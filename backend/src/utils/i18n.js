@@ -52,6 +52,11 @@ const EN = {
   'Treść żądania jest za duża.': 'The request body is too large.',
   'Niepoprawne żądanie.': 'Bad request.',
   'Wewnętrzny błąd serwera.': 'Internal server error.',
+  'Zbyt wiele nieudanych prób. Spróbuj ponownie za kilka minut.':
+    'Too many failed attempts. Please try again in a few minutes.',
+  'Nieprawidłowe hasło.': 'Incorrect password.',
+  'Nowe hasło musi różnić się od obecnego.': 'The new password must differ from the current one.',
+  'Hasło zostało zmienione.': 'Password changed.',
 };
 
 // Nazwy pól używane w komunikatach walidacji

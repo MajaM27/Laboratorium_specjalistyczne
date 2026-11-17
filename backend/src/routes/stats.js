@@ -2,12 +2,16 @@ import { Router } from 'express';
 import { db } from '../db/index.js';
 import { requireAuth } from '../middleware/auth.js';
 import { toVisit, VISIT_SELECT } from './visits.js';
+import { localNowISO } from '../utils/time.js';
 
 const router = Router();
 router.use(requireAuth);
 
-// Dane panelu głównego: liczba zwierząt (F-C-01) i najbliższa zaplanowana wizyta (F-C-02)
+// Dane panelu głównego: liczba zwierząt (F-C-01) i najbliższa zaplanowana wizyta (F-C-02).
+// „Najbliższa” = najwcześniejsza zaplanowana, która jeszcze się nie odbyła; zaplanowane z datą
+// w przeszłości liczymy osobno jako zaległe.
 router.get('/', (req, res) => {
+  const now = localNowISO();
   const counts = db
     .prepare(
       `SELECT
@@ -15,22 +19,26 @@ router.get('/', (req, res) => {
          (SELECT COUNT(*) FROM visits v JOIN pets p ON p.id = v.pet_id
            WHERE p.user_id = @userId AND v.status = 'planned') AS planned_count,
          (SELECT COUNT(*) FROM visits v JOIN pets p ON p.id = v.pet_id
+           WHERE p.user_id = @userId AND v.status = 'planned'
+             AND v.visit_datetime < @now) AS overdue_count,
+         (SELECT COUNT(*) FROM visits v JOIN pets p ON p.id = v.pet_id
            WHERE p.user_id = @userId AND v.status = 'done') AS done_count`,
     )
-    .get({ userId: req.user.id });
+    .get({ userId: req.user.id, now });
 
   const next = db
     .prepare(
       `${VISIT_SELECT}
-       WHERE p.user_id = ? AND v.status = 'planned'
+       WHERE p.user_id = ? AND v.status = 'planned' AND v.visit_datetime >= ?
        ORDER BY v.visit_datetime, v.id
        LIMIT 1`,
     )
-    .get(req.user.id);
+    .get(req.user.id, now);
 
   res.json({
     petCount: counts.pet_count,
     plannedVisitCount: counts.planned_count,
+    overdueVisitCount: counts.overdue_count,
     doneVisitCount: counts.done_count,
     nextVisit: next ? toVisit(next) : null,
   });

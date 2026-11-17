@@ -1,4 +1,5 @@
 import { HttpError } from './httpError.js';
+import { latestTodayISO } from './time.js';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -55,8 +56,7 @@ export function isValidDate(value) {
 function validateBirthDate(value) {
   if (isEmpty(value)) return null;
   if (!isValidDate(value)) return 'Podaj poprawną datę urodzenia (RRRR-MM-DD).';
-  if (value > new Date().toISOString().slice(0, 10))
-    return 'Data urodzenia nie może być z przyszłości.';
+  if (value > latestTodayISO()) return 'Data urodzenia nie może być z przyszłości.';
   return null;
 }
 

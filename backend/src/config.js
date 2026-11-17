@@ -33,8 +33,11 @@ export const config = {
   port: integer('PORT', 3001, { min: 1, max: 65535 }),
   databasePath: databasePath(),
   jwtSecret: required('JWT_SECRET'),
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '2h',
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1d',
   bcryptRounds: integer('BCRYPT_ROUNDS', 10, { min: 4, max: 15 }),
+  // Limit nieudanych prób logowania/rejestracji z jednego adresu IP
+  authRateLimitMax: integer('AUTH_RATE_LIMIT_MAX', 10, { min: 1, max: 1_000_000 }),
+  authRateLimitWindowMinutes: integer('AUTH_RATE_LIMIT_WINDOW_MINUTES', 15, { min: 1, max: 1440 }),
   corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:5180',
 };
 
