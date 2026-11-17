@@ -23,7 +23,7 @@ function validatePasswords({ currentPassword, newPassword, confirm }, t) {
 }
 
 function ChangePasswordForm() {
-  const { request } = useAuth();
+  const { request, replaceToken } = useAuth();
   const { t } = useI18n();
   const [form, setForm] = useState(EMPTY_PASSWORDS);
   const [errors, setErrors] = useState({});
@@ -46,6 +46,9 @@ function ChangePasswordForm() {
         method: 'PUT',
         body: { currentPassword: form.currentPassword, newPassword: form.newPassword },
       });
+      // Zmiana hasła unieważnia stare tokeny (inne urządzenia zostają wylogowane) – ta sesja
+      // dostaje nowy token, więc użytkownik pozostaje zalogowany
+      replaceToken(data.token);
       setForm(EMPTY_PASSWORDS);
       setSuccess(data.message);
     } catch (err) {

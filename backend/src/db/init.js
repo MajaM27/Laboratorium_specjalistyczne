@@ -5,6 +5,7 @@ import { config } from '../config.js';
 
 if (process.argv.includes('--reset')) {
   db.exec('DROP TABLE IF EXISTS visits; DROP TABLE IF EXISTS pets; DROP TABLE IF EXISTS users;');
+  db.pragma('user_version = 0');
   console.log('Usunięto istniejące tabele.');
 }
 

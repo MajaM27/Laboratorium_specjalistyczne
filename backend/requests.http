@@ -40,7 +40,7 @@ Content-Type: application/json
 
 { "email": "demo@petcare.pl", "password": "zle-haslo1" }
 
-### Zmiana hasła (złe obecne hasło → 400 z details.currentPassword)
+### Zmiana hasła – zwraca nowy token, stare tokeny przestają działać (złe obecne hasło → 400)
 PUT {{api}}/auth/password
 Authorization: Bearer {{login.response.body.token}}
 Content-Type: application/json

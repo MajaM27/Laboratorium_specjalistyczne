@@ -14,6 +14,7 @@ erDiagram
     INTEGER id PK
     TEXT email UK "unikalny, bez rozróżniania wielkości liter"
     TEXT password_hash "skrót bcrypt"
+    INTEGER token_version "+1 przy zmianie hasła"
     TEXT created_at
   }
   pets {
@@ -61,5 +62,26 @@ Indeksy: `pets(user_id)`, `visits(pet_id)`, `visits(visit_datetime)`.
 | Polecenie          | Działanie                                              |
 | ------------------ | ------------------------------------------------------ |
 | `npm run db:init`  | Tworzy brakujące tabele (robi to też start serwera)    |
-| `npm run db:seed`  | Dodaje konto demo z 2 zwierzętami i 3 wizytami         |
+| `npm run db:seed`  | Dodaje konto demo z 2 zwierzętami i 3 wizytami¹        |
 | `npm run db:reset` | Usuwa wszystkie dane, tworzy tabele i dodaje dane demo |
+
+¹ Daty wizyt demo są liczone względem dnia uruchomienia seeda (odbyta – ok. 4 miesiące temu,
+zaplanowane – za 3 i 16 dni), więc dane demo nie „starzeją się”.
+
+## 5.5 Migracje
+
+`schema.sql` zawiera zawsze **pełny, aktualny** schemat, ale `CREATE TABLE IF NOT EXISTS` nie
+zmienia tabel, które już istnieją. Zmiany dla istniejących baz opisują migracje w
+[`backend/src/db/migrations.js`](../backend/src/db/migrations.js):
+
+- numer ostatniej zastosowanej migracji jest zapisany w bazie (`PRAGMA user_version`),
+- przy każdym starcie serwera (i w `db:init`) brakujące migracje są stosowane automatycznie,
+  każda w osobnej transakcji – dane zostają, `db:reset` nie jest potrzebny,
+- migracje są idempotentne (np. dodają kolumnę tylko, jeśli jej nie ma), bo nowa baza dostaje
+  od razu pełny schemat z `schema.sql`.
+
+Dodając kolumnę: dopisz ją do `schema.sql` **i** dodaj migrację z kolejnym numerem.
+
+| Wersja | Zmiana                                                                 |
+| ------ | ---------------------------------------------------------------------- |
+| 1      | `users.token_version` – unieważnianie starych tokenów po zmianie hasła |

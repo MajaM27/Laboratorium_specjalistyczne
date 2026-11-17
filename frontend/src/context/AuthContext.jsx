@@ -85,6 +85,13 @@ export function AuthProvider({ children }) {
     return data.user;
   }, []);
 
+  // Nowy token dla tej samej sesji (np. po zmianie hasła, która unieważnia stare tokeny).
+  // Zapis w localStorage przekazuje go też innym kartom (zdarzenie storage).
+  const replaceToken = useCallback((nextToken) => {
+    writeToken(nextToken);
+    setToken(nextToken);
+  }, []);
+
   // Żądanie z tokenem; wygasły token (401) wylogowuje użytkownika z komunikatem o końcu sesji.
   // Po ponownym zalogowaniu użytkownik wraca na tę samą stronę (patrz ProtectedRoute).
   const request = useCallback(
@@ -100,8 +107,8 @@ export function AuthProvider({ children }) {
   );
 
   const value = useMemo(
-    () => ({ user, status, notice, login, logout, request }),
-    [user, status, notice, login, logout, request],
+    () => ({ user, status, notice, login, logout, request, replaceToken }),
+    [user, status, notice, login, logout, request, replaceToken],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

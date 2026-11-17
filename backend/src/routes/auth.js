@@ -72,7 +72,9 @@ router.post('/login', async (req, res) => {
   }
 
   const user = db
-    .prepare('SELECT id, email, password_hash, created_at FROM users WHERE email = ?')
+    .prepare(
+      'SELECT id, email, password_hash, token_version, created_at FROM users WHERE email = ?',
+    )
     .get(email.trim().toLowerCase());
   const passwordOk = await bcrypt.compare(password, user?.password_hash ?? DUMMY_HASH);
 
@@ -89,7 +91,7 @@ router.get('/me', requireAuth, (req, res) => {
   res.json({ user: publicUser(user) });
 });
 
-// Zmiana hasła: { currentPassword, newPassword }
+// Zmiana hasła: { currentPassword, newPassword }. Wylogowuje pozostałe sesje (token_version).
 router.put('/password', requireAuth, async (req, res) => {
   const { currentPassword, newPassword } = req.body ?? {};
   assertValid({ newPassword: validatePassword(newPassword) });
@@ -99,8 +101,13 @@ router.put('/password', requireAuth, async (req, res) => {
   }
 
   const passwordHash = await bcrypt.hash(newPassword, config.bcryptRounds);
-  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(passwordHash, req.user.id);
-  res.json({ message: translate('Hasło zostało zmienione.', req.lang) });
+  db.prepare(
+    'UPDATE users SET password_hash = ?, token_version = token_version + 1 WHERE id = ?',
+  ).run(passwordHash, req.user.id);
+
+  // Stare tokeny (także ten z żądania) przestały działać – bieżąca sesja dostaje nowy token
+  const user = db.prepare('SELECT id, token_version FROM users WHERE id = ?').get(req.user.id);
+  res.json({ message: translate('Hasło zostało zmienione.', req.lang), token: signToken(user) });
 });
 
 // Usunięcie konta razem ze zwierzętami i wizytami (ON DELETE CASCADE): { password }

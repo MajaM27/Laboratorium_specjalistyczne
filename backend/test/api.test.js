@@ -210,6 +210,10 @@ describe('Konto: zmiana hasła i usunięcie', () => {
     assert.equal(res.status, 200);
     assert.ok(res.body.message);
 
+    // Stary token (np. na innym urządzeniu) przestaje działać, nowy z odpowiedzi działa
+    assert.equal((await api('GET', '/auth/me', { token: user.token })).status, 401);
+    assert.equal((await api('GET', '/auth/me', { token: res.body.token })).status, 200);
+
     const oldLogin = { email: user.email, password: 'Haslo1234' };
     assert.equal((await api('POST', '/auth/login', { body: oldLogin })).status, 401);
     const newLogin = { email: user.email, password: 'NoweHaslo99' };
@@ -259,6 +263,73 @@ describe('Konto: zmiana hasła i usunięcie', () => {
     assert.equal((await api('GET', '/auth/me', { token: user.token })).status, 401);
     const left = db.prepare('SELECT COUNT(*) AS c FROM pets WHERE user_id = ?').get(user.id);
     assert.equal(left.c, 0);
+  });
+});
+
+describe('Frontend w wersji produkcyjnej', () => {
+  let prodServer;
+  let prodUrl;
+  let distDir;
+
+  before(async () => {
+    const fs = await import('node:fs');
+    const os = await import('node:os');
+    const path = await import('node:path');
+    distDir = fs.mkdtempSync(path.join(os.tmpdir(), 'petcare-dist-'));
+    fs.mkdirSync(path.join(distDir, 'assets'));
+    fs.writeFileSync(path.join(distDir, 'index.html'), '<!doctype html><title>PetCare</title>');
+    fs.writeFileSync(path.join(distDir, 'assets', 'app-123.js'), 'console.log(1)');
+    prodServer = createApp({ frontendDist: distDir }).listen(0);
+    await new Promise((resolve) => prodServer.once('listening', resolve));
+    prodUrl = `http://127.0.0.1:${prodServer.address().port}`;
+  });
+
+  after(async () => {
+    await new Promise((resolve) => prodServer.close(resolve));
+    const fs = await import('node:fs');
+    fs.rmSync(distDir, { recursive: true, force: true });
+  });
+
+  test('pliki statyczne, index.html dla tras Reacta, API bez zmian', async () => {
+    const asset = await fetch(`${prodUrl}/assets/app-123.js`);
+    assert.equal(asset.status, 200);
+    assert.match(asset.headers.get('cache-control'), /immutable/);
+
+    const route = await fetch(`${prodUrl}/pets/3`);
+    assert.equal(route.status, 200);
+    assert.match(await route.text(), /<title>PetCare/);
+    assert.equal(route.headers.get('x-frame-options'), 'DENY');
+    // Ścisła CSP tylko dla API – strona aplikacji musi móc ładować swoje skrypty
+    assert.equal(route.headers.get('content-security-policy'), null);
+
+    const missingApi = await fetch(`${prodUrl}/api/nie-ma`);
+    assert.equal(missingApi.status, 404);
+    assert.ok((await missingApi.json()).error);
+  });
+});
+
+describe('Migracje bazy', () => {
+  test('stara baza bez token_version dostaje kolumnę, ponowne uruchomienie nic nie psuje', async () => {
+    const { default: Database } = await import('better-sqlite3');
+    const { migrate } = await import('../src/db/migrations.js');
+    const old = new Database(':memory:');
+    old.exec(`CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT, password_hash TEXT);
+              INSERT INTO users (email, password_hash) VALUES ('a@test.pl', 'x');`);
+
+    migrate(old);
+    migrate(old);
+    const columns = old
+      .prepare('PRAGMA table_info(users)')
+      .all()
+      .map((c) => c.name);
+    assert.ok(columns.includes('token_version'));
+    assert.equal(old.prepare('SELECT token_version FROM users').get().token_version, 0);
+    assert.equal(old.pragma('user_version', { simple: true }), 1);
+    old.close();
+  });
+
+  test('nowa baza ma pełny schemat i aktualną wersję', () => {
+    assert.equal(db.pragma('user_version', { simple: true }), 1);
   });
 });
 

@@ -1,10 +1,12 @@
 -- PetCare – schemat bazy danych SQLite
 -- Relacje: users 1─* pets 1─* visits
+-- Zmiany dla istniejących baz: db/migrations.js (PRAGMA user_version)
 
 CREATE TABLE IF NOT EXISTS users (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
   email         TEXT    NOT NULL UNIQUE COLLATE NOCASE,
   password_hash TEXT    NOT NULL,
+  token_version INTEGER NOT NULL DEFAULT 0, -- +1 przy zmianie hasła: starsze tokeny JWT są odrzucane
   created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 

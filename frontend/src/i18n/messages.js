@@ -255,7 +255,8 @@ const pl = {
   'account.created': 'Konto założone',
   'account.logout': 'Wyloguj się',
   'account.passwordTitle': 'Zmiana hasła',
-  'account.passwordLead': 'Nowe hasło: co najmniej 8 znaków, w tym litera i cyfra.',
+  'account.passwordLead':
+    'Nowe hasło: co najmniej 8 znaków, w tym litera i cyfra. Po zmianie zostaniesz wylogowany na pozostałych urządzeniach.',
   'account.currentPassword': 'Obecne hasło',
   'account.newPassword': 'Nowe hasło',
   'account.confirmPassword': 'Powtórz nowe hasło',
@@ -509,7 +510,8 @@ const en = {
   'account.created': 'Account created',
   'account.logout': 'Sign out',
   'account.passwordTitle': 'Change password',
-  'account.passwordLead': 'New password: at least 8 characters, including a letter and a digit.',
+  'account.passwordLead':
+    'New password: at least 8 characters, including a letter and a digit. You will be signed out on your other devices.',
   'account.currentPassword': 'Current password',
   'account.newPassword': 'New password',
   'account.confirmPassword': 'Repeat new password',
