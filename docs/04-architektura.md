@@ -43,17 +43,17 @@ w pamięci (`DATABASE_PATH=:memory:`), więc nie dotykają pliku `data/petcare.d
 Wygląd na podstawie projektu graficznego **„PetCare Veterinary Dashboard”** (Figma Make),
 przeniesionego do zwykłego CSS (bez Tailwinda) i dopasowanego do modelu danych aplikacji.
 
-| Katalog / plik | Odpowiedzialność                                                                   |
-| -------------- | ---------------------------------------------------------------------------------- |
-| `main.jsx`     | Punkt wejścia: `BrowserRouter` + `AuthProvider`                                    |
-| `App.jsx`      | Definicja tras; trasy publiczne (`/login`, `/register`) i chronione                |
-| `api/`         | `apiRequest()` – wspólny klient HTTP (token, błędy)                                |
-| `context/`     | `AuthProvider` / `useAuth()` – token w `localStorage`, użytkownik, `request()`     |
-| `hooks/`       | `useApiData` (pobieranie danych), `usePageMeta`, `useVisitActions`, `useDebounced` |
-| `pages/`       | Strony powiązane z trasami                                                         |
-| `components/`  | Layout (menu boczne, nagłówek), pola formularzy, karty wizyt, filtry, stany        |
-| `utils/`       | Formatowanie dat/wieku/wagi po polsku, kolory kafelków, parametry filtrów          |
-| `styles/`      | `index.css` – zmienne kolorów w `:root`, układ responsywny (800 px / 580 px)       |
+| Katalog / plik | Odpowiedzialność                                                                                                     |
+| -------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `main.jsx`     | Punkt wejścia: `BrowserRouter` + `AuthProvider`                                                                      |
+| `App.jsx`      | Definicja tras; trasy publiczne (`/login`, `/register`) i chronione                                                  |
+| `api/`         | `apiRequest()` – wspólny klient HTTP (token, błędy)                                                                  |
+| `context/`     | `AuthProvider` / `useAuth()` – token w `localStorage`, użytkownik, `request()`                                       |
+| `hooks/`       | `useApiData` (pobieranie danych), `usePageMeta`, `useVisitActions`, `useDebounced`, `useTheme`                       |
+| `pages/`       | Strony powiązane z trasami                                                                                           |
+| `components/`  | Layout (menu boczne, nagłówek), pola formularzy, karty wizyt, filtry, stany                                          |
+| `utils/`       | Formatowanie dat/wieku/wagi po polsku, kolory kafelków, parametry filtrów                                            |
+| `styles/`      | `index.css` – zmienne kolorów (jasne w `:root`, ciemne w `[data-theme='dark']`), układ responsywny (800 px / 580 px) |
 
 ### Trasy
 
@@ -78,6 +78,11 @@ przeniesionego do zwykłego CSS (bez Tailwinda) i dopasowanego do modelu danych 
 - Usunięcie zwierzęcia lub wizyty wymaga potwierdzenia (`window.confirm`).
 - Aplikacja nie przechowuje zdjęć zwierząt – zamiast zdjęć z projektu graficznego używamy
   kolorowego kafelka z inicjałem imienia (kolor zależny od `id`).
+- **Tryb ciemny (NF-C-01)**: wszystkie kolory w `index.css` pochodzą ze zmiennych CSS;
+  `:root[data-theme='dark']` nadpisuje je ciemnymi wartościami. Skrypt w `index.html` ustawia
+  `data-theme` przed renderowaniem (bez błysku jasnego ekranu): zapisany wybór z `localStorage`
+  (`petcare-theme`) albo ustawienie systemu (`prefers-color-scheme`). Przełącznik (`ThemeToggle`)
+  jest w nagłówku i na ekranach logowania/rejestracji; bez ręcznego wyboru motyw podąża za systemem.
 - Elementy projektu bez odpowiednika w wymaganiach (lekarz prowadzący, mapa gabinetu,
   powiadomienia, zdjęcia, eksport) zostały pominięte.
 

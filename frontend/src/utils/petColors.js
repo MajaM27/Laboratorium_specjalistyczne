@@ -1,12 +1,8 @@
-// Kolory kafelka zwierzęcia – zależne od id, żeby były stałe między widokami
-const palette = [
-  ['#dceae0', '#285f4e'],
-  ['#ede5d6', '#876a35'],
-  ['#e2e8d9', '#4f6b3a'],
-  ['#e4eeee', '#4c7474'],
-  ['#efe1dc', '#8a5444'],
-];
+// Kolory kafelka zwierzęcia – zależne od id, żeby były stałe między widokami.
+// Wartości są zmiennymi CSS (--pet-N-bg / --pet-N-fg w index.css), więc działają w obu motywach.
+const PALETTE_SIZE = 5;
 
 export function petColors(id) {
-  return palette[(Number(id) || 0) % palette.length];
+  const index = (Number(id) || 0) % PALETTE_SIZE;
+  return [`var(--pet-${index}-bg)`, `var(--pet-${index}-fg)`];
 }

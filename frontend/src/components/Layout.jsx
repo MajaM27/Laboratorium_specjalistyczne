@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/auth.js';
 import Icon from './Icon.jsx';
 import Logo from './Logo.jsx';
+import ThemeToggle from './ThemeToggle.jsx';
 import { initials } from '../utils/format.js';
 
 const nav = [
@@ -79,9 +80,12 @@ export default function Layout() {
             <h1>{meta.title}</h1>
             {meta.subtitle && <p>{meta.subtitle}</p>}
           </div>
-          <NavLink to="/account" className="top-avatar" title={user?.email}>
-            {initials(user?.email)}
-          </NavLink>
+          <div className="topbar-actions">
+            <ThemeToggle />
+            <NavLink to="/account" className="top-avatar" title={user?.email}>
+              {initials(user?.email)}
+            </NavLink>
+          </div>
         </header>
         <main className="content">
           <Outlet context={{ setMeta }} />

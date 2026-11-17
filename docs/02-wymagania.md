@@ -66,8 +66,10 @@ Status: ⬜ do zrobienia · 🟨 w trakcie · ✅ zrealizowane (aktualizowany na
 
 ### COULD – dodatkowe
 
-- NF-C-01: Ciemny motyw interfejsu.
-- NF-C-02: Wybór języka polskiego lub angielskiego.
+| ID      | Wymaganie                               | Realizacja                             | Status |
+| ------- | --------------------------------------- | -------------------------------------- | ------ |
+| NF-C-01 | Ciemny motyw interfejsu                 | zmienne CSS, `data-theme`, przełącznik | ✅     |
+| NF-C-02 | Wybór języka polskiego lub angielskiego | –                                      | ⬜     |
 
 ### WON'T – poza zakresem aktualnej wersji
 
