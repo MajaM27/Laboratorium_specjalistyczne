@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useAuth } from '../context/auth.js';
+import { useI18n } from '../context/language.js';
 
 // Wspólne akcje na wizytach: zakończenie i usunięcie (z potwierdzeniem)
 export function useVisitActions(onDone) {
   const { request } = useAuth();
+  const { t } = useI18n();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -23,7 +25,7 @@ export function useVisitActions(onDone) {
   const complete = (visit) => run(`/visits/${visit.id}/complete`, 'PATCH');
 
   const remove = (visit) => {
-    if (window.confirm(`Usunąć wizytę „${visit.purpose}” (${visit.petName})?`))
+    if (window.confirm(t('visits.confirmDelete', { purpose: visit.purpose, pet: visit.petName })))
       run(`/visits/${visit.id}`, 'DELETE');
   };
 

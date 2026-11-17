@@ -14,6 +14,10 @@ Format danych: JSON (treść żądania maks. 100 kB). Testy ręczne:
   { "error": "Komunikat dla użytkownika", "details": { "email": "Niepoprawny adres e-mail" } }
   ```
 
+- Język komunikatów (NF-C-02): nagłówek `Accept-Language`. Domyślnie polski; `en` (np.
+  `en-GB,en;q=0.9`) zwraca komunikaty `error`, `details` i `message` po angielsku. Inne języki →
+  polski. Odpowiedzi mają nagłówek `Vary: Accept-Language`. Tłumaczenia: `backend/src/utils/i18n.js`.
+
 | Kod | Znaczenie                                           |
 | --- | --------------------------------------------------- |
 | 200 | OK                                                  |

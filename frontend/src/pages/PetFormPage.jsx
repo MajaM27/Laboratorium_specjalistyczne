@@ -9,8 +9,8 @@ import { Loader } from '../components/States.jsx';
 import { useAuth } from '../context/auth.js';
 import { useApiData } from '../hooks/useApiData.js';
 import { formatAge, todayISO } from '../utils/format.js';
+import { useI18n } from '../context/language.js';
 
-const SPECIES = ['Pies', 'Kot', 'Królik', 'Chomik', 'Świnka morska', 'Papuga', 'Rybki', 'Żółw'];
 const EMPTY = { name: '', species: '', breed: '', birthDate: '', weight: '', notes: '' };
 
 function toForm(pet) {
@@ -25,22 +25,21 @@ function toForm(pet) {
 }
 
 // Walidacja dla wygody – ostateczna i tak odbywa się w backendzie
-function validate(form) {
+function validate(form, t) {
   const errors = {};
-  if (!form.name.trim()) errors.name = 'Pole „Imię” jest wymagane.';
-  if (!form.species.trim()) errors.species = 'Pole „Gatunek” jest wymagane.';
-  if (form.birthDate && form.birthDate > todayISO())
-    errors.birthDate = 'Data urodzenia nie może być z przyszłości.';
+  if (!form.name.trim()) errors.name = t('petForm.errorName');
+  if (!form.species.trim()) errors.species = t('petForm.errorSpecies');
+  if (form.birthDate && form.birthDate > todayISO()) errors.birthDate = t('petForm.errorBirthDate');
   if (form.weight) {
     const w = Number(form.weight.replace(',', '.'));
-    if (!Number.isFinite(w) || w <= 0 || w > 1000)
-      errors.weight = 'Waga musi być liczbą większą od 0 (maks. 1000 kg).';
+    if (!Number.isFinite(w) || w <= 0 || w > 1000) errors.weight = t('petForm.errorWeight');
   }
   return errors;
 }
 
 function PetForm({ pet }) {
   const { request } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [form, setForm] = useState(pet ? toForm(pet) : EMPTY);
   const [errors, setErrors] = useState({});
@@ -51,9 +50,9 @@ function PetForm({ pet }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    const found = validate(form);
+    const found = validate(form, t);
     setErrors(found);
-    setError(Object.keys(found).length ? 'Popraw zaznaczone pola formularza.' : '');
+    setError(Object.keys(found).length ? t('common.fixFields') : '');
     if (Object.keys(found).length) return;
 
     const body = {
@@ -84,46 +83,48 @@ function PetForm({ pet }) {
             <Icon name="paw" />
           </span>
           <div>
-            <h3>{pet ? `Edycja profilu: ${pet.name}` : 'Opowiedz nam o swoim zwierzęciu'}</h3>
-            <p>Pola oznaczone * są wymagane. Dane możesz zmienić w każdej chwili.</p>
+            <h3>{pet ? t('petForm.headEdit', { name: pet.name }) : t('petForm.headNew')}</h3>
+            <p>{t('petForm.lead')}</p>
           </div>
         </div>
         <form onSubmit={handleSubmit} noValidate>
           <Alert>{error}</Alert>
           <div className="form-grid">
             <Field
-              label="Imię *"
+              label={t('petForm.name')}
               value={form.name}
               maxLength={50}
-              placeholder="np. Rex"
+              placeholder={t('petForm.namePlaceholder')}
               onChange={update('name')}
               error={errors.name}
               autoFocus={!pet}
             />
             <Field
-              label="Gatunek *"
+              label={t('petForm.species')}
               value={form.species}
               maxLength={50}
-              placeholder="np. Pies"
+              placeholder={t('petForm.speciesPlaceholder')}
               list="species-list"
               onChange={update('species')}
               error={errors.species}
             />
             <datalist id="species-list">
-              {SPECIES.map((s) => (
-                <option key={s} value={s} />
-              ))}
+              {t('petForm.speciesList')
+                .split(',')
+                .map((s) => (
+                  <option key={s} value={s} />
+                ))}
             </datalist>
             <Field
-              label="Rasa"
+              label={t('petForm.breed')}
               value={form.breed}
               maxLength={50}
-              placeholder="np. Labrador"
+              placeholder={t('petForm.breedPlaceholder')}
               onChange={update('breed')}
               error={errors.breed}
             />
             <Field
-              label="Data urodzenia"
+              label={t('petForm.birthDate')}
               type="date"
               value={form.birthDate}
               max={todayISO()}
@@ -131,43 +132,43 @@ function PetForm({ pet }) {
               error={errors.birthDate}
             />
             <Field
-              label="Waga (kg)"
+              label={t('petForm.weight')}
               inputMode="decimal"
               value={form.weight}
-              placeholder="np. 12,5"
+              placeholder={t('petForm.weightPlaceholder')}
               onChange={update('weight')}
               error={errors.weight}
             />
             <Field
               as="textarea"
               wide
-              label="Notatki o opiece"
+              label={t('petForm.notes')}
               value={form.notes}
               maxLength={1000}
-              placeholder="Alergie, nawyki, ulubione przysmaki…"
+              placeholder={t('petForm.notesPlaceholder')}
               onChange={update('notes')}
               error={errors.notes}
             />
           </div>
           <div className="form-buttons">
             <Link className="secondary" to={pet ? `/pets/${pet.id}` : '/pets'}>
-              Anuluj
+              {t('common.cancel')}
             </Link>
             <button className="primary" type="submit" disabled={busy}>
-              <Icon name="check" size={18} /> {busy ? 'Zapisywanie…' : 'Zapisz profil'}
+              <Icon name="check" size={18} /> {busy ? t('common.saving') : t('petForm.submit')}
             </button>
           </div>
         </form>
       </section>
       <aside className="upload-card">
-        <h3>Podgląd</h3>
-        <p>Tak zwierzę będzie widoczne na listach.</p>
+        <h3>{t('petForm.preview')}</h3>
+        <p>{t('petForm.previewText')}</p>
         <div className="preview-tile">
           <PetAvatar pet={preview} size={110} radius={30} />
-          <b>{form.name || 'Imię zwierzęcia'}</b>
+          <b>{form.name || t('petForm.previewName')}</b>
           <small>
             {[form.species, form.breed, formatAge(form.birthDate)].filter(Boolean).join(' · ') ||
-              'gatunek · rasa · wiek'}
+              t('petForm.previewMeta')}
           </small>
         </div>
       </aside>
@@ -179,9 +180,10 @@ function PetForm({ pet }) {
 export default function PetFormPage() {
   const { id } = useParams();
   const { data, error } = useApiData(id ? `/pets/${id}` : null);
+  const { t } = useI18n();
   usePageMeta(
-    id ? 'Edycja zwierzęcia' : 'Nowe zwierzę',
-    id ? 'Zaktualizuj dane swojego pupila.' : 'Utwórz profil swojego pupila.',
+    id ? t('petForm.titleEdit') : t('petForm.titleNew'),
+    id ? t('petForm.subtitleEdit') : t('petForm.subtitleNew'),
   );
 
   if (!id) return <PetForm />;

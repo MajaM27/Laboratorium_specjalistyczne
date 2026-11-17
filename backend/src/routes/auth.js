@@ -5,6 +5,7 @@ import { db } from '../db/index.js';
 import { HttpError } from '../utils/httpError.js';
 import { assertValid, validateEmail, validatePassword } from '../utils/validation.js';
 import { requireAuth, signToken } from '../middleware/auth.js';
+import { translate } from '../utils/i18n.js';
 
 const router = Router();
 
@@ -36,9 +37,10 @@ router.post('/register', (req, res) => {
   const user = db
     .prepare('SELECT id, email, created_at FROM users WHERE id = ?')
     .get(lastInsertRowid);
-  res
-    .status(201)
-    .json({ message: 'Konto zostało utworzone. Możesz się zalogować.', user: publicUser(user) });
+  res.status(201).json({
+    message: translate('Konto zostało utworzone. Możesz się zalogować.', req.lang),
+    user: publicUser(user),
+  });
 });
 
 // PU-02 – logowanie

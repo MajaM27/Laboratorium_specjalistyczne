@@ -1,13 +1,16 @@
+import { useI18n } from '../context/language.js';
+
 // Filtry listy wizyt: zwierzę i zakres dat (F-S-02)
 export default function VisitFilters({ pets, filters, onChange }) {
+  const { t } = useI18n();
   const set = (key) => (e) => onChange({ ...filters, [key]: e.target.value });
   const active = filters.petId || filters.from || filters.to;
   return (
     <div className="filters">
       <label>
-        <span>Zwierzę</span>
+        <span>{t('filters.pet')}</span>
         <select value={filters.petId} onChange={set('petId')}>
-          <option value="">Wszystkie zwierzęta</option>
+          <option value="">{t('filters.allPets')}</option>
           {pets.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
@@ -16,7 +19,7 @@ export default function VisitFilters({ pets, filters, onChange }) {
         </select>
       </label>
       <label>
-        <span>Od dnia</span>
+        <span>{t('filters.from')}</span>
         <input
           type="date"
           value={filters.from}
@@ -25,7 +28,7 @@ export default function VisitFilters({ pets, filters, onChange }) {
         />
       </label>
       <label>
-        <span>Do dnia</span>
+        <span>{t('filters.to')}</span>
         <input
           type="date"
           value={filters.to}
@@ -39,7 +42,7 @@ export default function VisitFilters({ pets, filters, onChange }) {
           className="text-link filters-clear"
           onClick={() => onChange({ petId: '', from: '', to: '' })}
         >
-          Wyczyść filtry
+          {t('filters.clear')}
         </button>
       )}
     </div>

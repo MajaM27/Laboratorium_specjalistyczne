@@ -7,7 +7,8 @@ import { EmptyState, Loader } from '../components/States.jsx';
 import { VisitRow } from '../components/VisitItem.jsx';
 import { useAuth } from '../context/auth.js';
 import { useApiData } from '../hooks/useApiData.js';
-import { formatAge, formatDateTime } from '../utils/format.js';
+import { formatAge, formatDateTime, formatLongToday } from '../utils/format.js';
+import { useI18n } from '../context/language.js';
 
 function Stat({ icon, value, label, note, color }) {
   return (
@@ -41,26 +42,16 @@ function SectionHead({ title, action, to }) {
   );
 }
 
-function visitsSummary(count) {
-  if (count === 0) return 'Nie masz zaplanowanych wizyt.';
-  if (count === 1) return 'Masz zaplanowaną jedną wizytę.';
-  const few = count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 12 || count % 100 > 14);
-  return `Masz ${count} ${few ? 'zaplanowane wizyty' : 'zaplanowanych wizyt'}.`;
-}
-
 // Panel główny: statystyki (F-C-01, F-C-02), zwierzęta i najbliższe wizyty
 export default function DashboardPage() {
-  usePageMeta('Panel główny', 'Szybki przegląd opieki nad Twoimi zwierzętami.');
+  const { t } = useI18n();
+  usePageMeta(t('dashboard.title'), t('dashboard.subtitle'));
   const { user } = useAuth();
   const stats = useApiData('/stats');
   const pets = useApiData('/pets');
   const visits = useApiData('/visits?status=planned');
 
-  const today = new Date().toLocaleDateString('pl-PL', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
+  const today = formatLongToday();
   const s = stats.data;
   const error = stats.error || pets.error || visits.error;
 
@@ -69,14 +60,18 @@ export default function DashboardPage() {
       <div className="welcome-card">
         <div>
           <span className="date-pill">{today.toUpperCase()}</span>
-          <h2>Dzień dobry, {user.email.split('@')[0]}!</h2>
-          <p>{s ? visitsSummary(s.plannedVisitCount) : 'Wczytywanie podsumowania…'}</p>
+          <h2>{t('dashboard.greeting', { name: user.email.split('@')[0] })}</h2>
+          <p>
+            {s
+              ? t('dashboard.summary', { count: s.plannedVisitCount })
+              : t('dashboard.summaryLoading')}
+          </p>
           <div className="welcome-actions">
             <Link className="primary" to="/pets/new">
-              <Icon name="plus" size={18} /> Dodaj zwierzę
+              <Icon name="plus" size={18} /> {t('dashboard.addPet')}
             </Link>
             <Link className="secondary" to="/visits/new">
-              <Icon name="calendar" size={18} /> Zaplanuj wizytę
+              <Icon name="calendar" size={18} /> {t('dashboard.planVisit')}
             </Link>
           </div>
         </div>
@@ -94,41 +89,45 @@ export default function DashboardPage() {
         <Stat
           icon="paw"
           color="green"
-          label="Twoje zwierzęta"
+          label={t('dashboard.statPets')}
           value={s ? s.petCount : '–'}
-          note="przypisane do konta"
+          note={t('dashboard.statPetsNote')}
         />
         <Stat
           icon="calendar"
           color="sand"
-          label="Zaplanowane wizyty"
+          label={t('dashboard.statPlanned')}
           value={s ? s.plannedVisitCount : '–'}
-          note={s?.nextVisit ? `najbliższa: ${formatDateTime(s.nextVisit.visitDateTime)}` : 'brak'}
+          note={
+            s?.nextVisit
+              ? t('dashboard.statNext', { date: formatDateTime(s.nextVisit.visitDateTime) })
+              : t('dashboard.statNone')
+          }
         />
         <Stat
           icon="check"
           color="blue"
-          label="Odbyte wizyty"
+          label={t('dashboard.statDone')}
           value={s ? s.doneVisitCount : '–'}
-          note="w historii"
+          note={t('dashboard.statDoneNote')}
         />
       </div>
 
       <div className="dashboard-grid">
         <section className="section-card">
-          <SectionHead title="Moje zwierzęta" action="Zobacz wszystkie" to="/pets" />
+          <SectionHead title={t('dashboard.myPets')} action={t('dashboard.seeAll')} to="/pets" />
           {!pets.data ? (
             <Loader />
           ) : pets.data.pets.length === 0 ? (
             <EmptyState
-              title="Brak zwierząt"
+              title={t('dashboard.noPets')}
               action={
                 <Link className="primary" to="/pets/new">
-                  <Icon name="plus" size={18} /> Dodaj pierwsze zwierzę
+                  <Icon name="plus" size={18} /> {t('dashboard.addFirstPet')}
                 </Link>
               }
             >
-              Dodaj swojego pupila, aby planować jego wizyty.
+              {t('dashboard.noPetsText')}
             </EmptyState>
           ) : (
             <div className="pet-strip">
@@ -149,16 +148,20 @@ export default function DashboardPage() {
         </section>
 
         <section className="section-card">
-          <SectionHead title="Najbliższe wizyty" action="Wszystkie wizyty" to="/visits" />
+          <SectionHead
+            title={t('dashboard.upcoming')}
+            action={t('dashboard.allVisits')}
+            to="/visits"
+          />
           {!visits.data ? (
             <Loader />
           ) : visits.data.visits.length === 0 ? (
             <EmptyState
               icon="calendar"
-              title="Brak zaplanowanych wizyt"
+              title={t('dashboard.noVisits')}
               action={
                 <Link className="secondary" to="/visits/new">
-                  <Icon name="plus" size={18} /> Zaplanuj wizytę
+                  <Icon name="plus" size={18} /> {t('dashboard.planVisit')}
                 </Link>
               }
             />

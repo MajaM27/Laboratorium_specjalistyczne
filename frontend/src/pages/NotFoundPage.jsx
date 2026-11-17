@@ -1,16 +1,18 @@
 import { Link } from 'react-router-dom';
 import { usePageMeta } from '../hooks/usePageMeta.js';
 import { EmptyState } from '../components/States.jsx';
+import { useI18n } from '../context/language.js';
 
 export default function NotFoundPage() {
-  usePageMeta('Nie znaleziono strony');
+  const { t } = useI18n();
+  usePageMeta(t('notFound.pageTitle'));
   return (
     <EmptyState
       icon="search"
-      title="Ta strona nie istnieje"
+      title={t('notFound.title')}
       action={
         <Link className="primary" to="/">
-          Wróć do panelu
+          {t('notFound.back')}
         </Link>
       }
     />

@@ -1,13 +1,19 @@
 import Icon from './Icon.jsx';
 import Logo from './Logo.jsx';
 import ThemeToggle from './ThemeToggle.jsx';
+import LanguageSwitch from './LanguageSwitch.jsx';
+import { useI18n } from '../context/language.js';
 
 // Wspólny układ ekranów logowania i rejestracji
 export default function AuthLayout({ eyebrow, title, lead, children }) {
+  const { t } = useI18n();
   return (
     <div className="auth-shell">
       <section className="auth-panel">
-        <ThemeToggle className="auth-theme-toggle" />
+        <div className="auth-tools">
+          <LanguageSwitch />
+          <ThemeToggle />
+        </div>
         <div className="auth-inner">
           <Logo />
           <div className="auth-copy">
@@ -23,14 +29,14 @@ export default function AuthLayout({ eyebrow, title, lead, children }) {
         <div className="auth-orb orb-two" />
         <div className="visual-copy">
           <span className="mini-badge">
-            <Icon name="heart" size={15} /> Opieka bez stresu
+            <Icon name="heart" size={15} /> {t('auth.badge')}
           </span>
           <h2>
-            Więcej radosnych chwil.
+            {t('auth.visualTitle1')}
             <br />
-            Mniej do zapamiętania.
+            {t('auth.visualTitle2')}
           </h2>
-          <p>Zwierzęta, wizyty u weterynarza i ich historia – wszystko w jednym miejscu.</p>
+          <p>{t('auth.visualText')}</p>
         </div>
         <div className="pet-collage">
           <div className="main-photo">
@@ -44,8 +50,8 @@ export default function AuthLayout({ eyebrow, title, lead, children }) {
               <Icon name="check" size={15} />
             </span>
             <div>
-              <b>Wszystko pod kontrolą!</b>
-              <small>Najbliższa wizyta zapisana w kalendarzu</small>
+              <b>{t('auth.noteTitle')}</b>
+              <small>{t('auth.noteText')}</small>
             </div>
           </div>
         </div>

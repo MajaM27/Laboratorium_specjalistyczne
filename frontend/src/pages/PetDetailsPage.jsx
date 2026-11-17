@@ -9,6 +9,7 @@ import { StatusBadge } from '../components/VisitItem.jsx';
 import { useAuth } from '../context/auth.js';
 import { useApiData } from '../hooks/useApiData.js';
 import { formatAge, formatDate, formatDateTime, formatWeight } from '../utils/format.js';
+import { useI18n } from '../context/language.js';
 
 function DetailFact({ label, value, icon }) {
   return (
@@ -23,6 +24,7 @@ function DetailFact({ label, value, icon }) {
 }
 
 function Timeline({ visits, onComplete, busy }) {
+  const { t } = useI18n();
   return visits.map((v) => (
     <div className={`timeline ${v.status}`} key={v.id}>
       <i />
@@ -39,12 +41,12 @@ function Timeline({ visits, onComplete, busy }) {
             className="icon-action"
             onClick={() => onComplete(v)}
             disabled={busy}
-            title="Oznacz jako zakończoną"
+            title={t('visits.markDone')}
           >
             <Icon name="check" size={16} />
           </button>
         )}
-        <Link className="icon-action" to={`/visits/${v.id}/edit`} title="Edytuj wizytę">
+        <Link className="icon-action" to={`/visits/${v.id}/edit`} title={t('visits.edit')}>
           <Icon name="edit" size={16} />
         </Link>
       </div>
@@ -57,17 +59,16 @@ export default function PetDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { request } = useAuth();
+  const { t } = useI18n();
   const pet = useApiData(`/pets/${id}`);
   const visits = useApiData(`/visits?petId=${id}`);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState('');
   const p = pet.data?.pet;
-  usePageMeta(p ? p.name : 'Zwierzę', 'Profil i historia wizyt.');
+  usePageMeta(p ? p.name : t('petDetails.fallbackTitle'), t('petDetails.subtitle'));
 
   async function handleDelete() {
-    const ok = window.confirm(
-      `Usunąć zwierzę „${p.name}”? Zostaną usunięte także wszystkie jego wizyty (${p.visitCount}).`,
-    );
+    const ok = window.confirm(t('pets.confirmDelete', { name: p.name, count: p.visitCount }));
     if (!ok) return;
     setBusy(true);
     try {
@@ -97,7 +98,7 @@ export default function PetDetailsPage() {
     return (
       <>
         <Link className="back-button" to="/pets">
-          <Icon name="back" size={15} /> Wszystkie zwierzęta
+          <Icon name="back" size={15} /> {t('petDetails.back')}
         </Link>
         <Alert>{pet.error}</Alert>
       </>
@@ -112,7 +113,7 @@ export default function PetDetailsPage() {
   return (
     <>
       <Link className="back-button" to="/pets">
-        <Icon name="back" size={15} /> Wszystkie zwierzęta
+        <Icon name="back" size={15} /> {t('petDetails.back')}
       </Link>
       <Alert>{actionError || visits.error}</Alert>
       <section className="pet-hero">
@@ -121,66 +122,64 @@ export default function PetDetailsPage() {
           <span className="status-pill">
             <i />
             {p.nextVisit
-              ? `Najbliższa wizyta: ${formatDateTime(p.nextVisit)}`
-              : 'Brak zaplanowanych wizyt'}
+              ? t('petDetails.nextVisit', { date: formatDateTime(p.nextVisit) })
+              : t('petDetails.noPlanned')}
           </span>
           <h2>{p.name}</h2>
           <p>{[p.species, p.breed, age].filter(Boolean).join(' · ')}</p>
           <div className="hero-actions">
             <Link className="primary" to={`/visits/new?petId=${p.id}`}>
-              <Icon name="calendar" size={17} /> Zaplanuj wizytę
+              <Icon name="calendar" size={17} /> {t('visits.plan')}
             </Link>
             <Link className="secondary" to={`/pets/${p.id}/edit`}>
-              <Icon name="edit" size={17} /> Edytuj
+              <Icon name="edit" size={17} /> {t('common.edit')}
             </Link>
             <button className="secondary danger" onClick={handleDelete} disabled={busy}>
-              <Icon name="trash" size={17} /> Usuń
+              <Icon name="trash" size={17} /> {t('common.delete')}
             </button>
           </div>
         </div>
       </section>
 
       <div className="detail-facts">
-        <DetailFact label="Gatunek" value={p.species} icon="paw" />
-        <DetailFact label="Rasa" value={p.breed || '—'} icon="heart" />
-        <DetailFact label="Data urodzenia" value={formatDate(p.birthDate)} icon="calendar" />
-        <DetailFact label="Waga" value={formatWeight(p.weight)} icon="scale" />
+        <DetailFact label={t('petDetails.species')} value={p.species} icon="paw" />
+        <DetailFact label={t('petDetails.breed')} value={p.breed || '—'} icon="heart" />
+        <DetailFact label={t('pets.birthDate')} value={formatDate(p.birthDate)} icon="calendar" />
+        <DetailFact label={t('pets.weight')} value={formatWeight(p.weight)} icon="scale" />
       </div>
 
       <div className="detail-columns">
         <section className="section-card">
           <div className="section-head">
-            <h3>Notatki o opiece</h3>
+            <h3>{t('petDetails.notes')}</h3>
             <Link to={`/pets/${p.id}/edit`}>
-              Edytuj <Icon name="edit" size={14} />
+              {t('common.edit')} <Icon name="edit" size={14} />
             </Link>
           </div>
           {p.notes ? (
             <p className="notes">{p.notes}</p>
           ) : (
-            <p className="notes muted">
-              Brak notatek. Dodaj informacje o alergiach, diecie czy nawykach.
-            </p>
+            <p className="notes muted">{t('petDetails.noNotes')}</p>
           )}
         </section>
         <section className="section-card">
           <div className="section-head">
-            <h3>Wizyty ({p.visitCount})</h3>
+            <h3>{t('petDetails.visits', { count: p.visitCount })}</h3>
             <Link to={`/visits/new?petId=${p.id}`}>
-              Dodaj <Icon name="plus" size={14} />
+              {t('common.add')} <Icon name="plus" size={14} />
             </Link>
           </div>
           {!visits.data ? (
             !visits.error && <Loader />
           ) : list.length === 0 ? (
-            <EmptyState icon="calendar" title="Brak wizyt">
-              To zwierzę nie ma jeszcze zapisanych wizyt.
+            <EmptyState icon="calendar" title={t('petDetails.noVisits')}>
+              {t('petDetails.noVisitsText')}
             </EmptyState>
           ) : (
             <>
-              {planned.length > 0 && <p className="timeline-label">Zaplanowane</p>}
+              {planned.length > 0 && <p className="timeline-label">{t('petDetails.planned')}</p>}
               <Timeline visits={planned} onComplete={handleComplete} busy={busy} />
-              {done.length > 0 && <p className="timeline-label">Historia</p>}
+              {done.length > 0 && <p className="timeline-label">{t('petDetails.history')}</p>}
               <Timeline visits={done} onComplete={handleComplete} busy={busy} />
             </>
           )}

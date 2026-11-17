@@ -2,11 +2,14 @@ import { Link } from 'react-router-dom';
 import { dateParts, isOverdue } from '../utils/format.js';
 import Icon from './Icon.jsx';
 import PetAvatar from './PetAvatar.jsx';
+import { useI18n } from '../context/language.js';
 
 function StatusBadge({ visit }) {
-  if (visit.status === 'done') return <em className="badge badge-done">Zakończona</em>;
-  if (isOverdue(visit)) return <em className="badge badge-overdue">Po terminie</em>;
-  return <em className="badge badge-planned">Zaplanowana</em>;
+  const { t } = useI18n();
+  if (visit.status === 'done')
+    return <em className="badge badge-done">{t('visits.statusDone')}</em>;
+  if (isOverdue(visit)) return <em className="badge badge-overdue">{t('visits.statusOverdue')}</em>;
+  return <em className="badge badge-planned">{t('visits.statusPlanned')}</em>;
 }
 
 // Zwarta pozycja wizyty – panel główny
@@ -35,6 +38,7 @@ export function VisitRow({ visit, featured = false }) {
 
 // Pełna pozycja wizyty z akcjami – lista zaplanowanych wizyt
 export function VisitCard({ visit, onComplete, onDelete, busy }) {
+  const { t } = useI18n();
   const d = dateParts(visit.visitDateTime);
   return (
     <div className="full-appointment">
@@ -63,20 +67,20 @@ export function VisitCard({ visit, onComplete, onDelete, busy }) {
             className="action-button action-complete"
             onClick={() => onComplete(visit)}
             disabled={busy}
-            title="Oznacz jako zakończoną"
+            title={t('visits.markDone')}
           >
             <Icon name="check" size={17} />
-            <span>Zakończ</span>
+            <span>{t('visits.complete')}</span>
           </button>
         )}
-        <Link to={`/visits/${visit.id}/edit`} className="icon-action" title="Edytuj wizytę">
+        <Link to={`/visits/${visit.id}/edit`} className="icon-action" title={t('visits.edit')}>
           <Icon name="edit" size={17} />
         </Link>
         <button
           className="icon-action danger"
           onClick={() => onDelete(visit)}
           disabled={busy}
-          title="Usuń wizytę"
+          title={t('visits.delete')}
         >
           <Icon name="trash" size={17} />
         </button>

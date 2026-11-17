@@ -8,19 +8,21 @@ import { EmptyState, Loader } from '../components/States.jsx';
 import { useAuth } from '../context/auth.js';
 import { useApiData } from '../hooks/useApiData.js';
 import { formatDateTime, nowISO } from '../utils/format.js';
+import { useI18n } from '../context/language.js';
 
-function validate(form) {
+function validate(form, t) {
   const errors = {};
-  if (!form.petId) errors.petId = 'Wybierz zwierzę.';
+  if (!form.petId) errors.petId = t('visitForm.errorPet');
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(form.visitDateTime))
-    errors.visitDateTime = 'Podaj datę i godzinę wizyty.';
-  if (!form.clinic.trim()) errors.clinic = 'Pole „Gabinet” jest wymagane.';
-  if (!form.purpose.trim()) errors.purpose = 'Pole „Cel wizyty” jest wymagane.';
+    errors.visitDateTime = t('visitForm.errorDateTime');
+  if (!form.clinic.trim()) errors.clinic = t('visitForm.errorClinic');
+  if (!form.purpose.trim()) errors.purpose = t('visitForm.errorPurpose');
   return errors;
 }
 
 function VisitForm({ visit, pets, defaultPetId }) {
   const { request } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [form, setForm] = useState(
     visit
@@ -42,9 +44,9 @@ function VisitForm({ visit, pets, defaultPetId }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    const found = validate(form);
+    const found = validate(form, t);
     setErrors(found);
-    setError(Object.keys(found).length ? 'Popraw zaznaczone pola formularza.' : '');
+    setError(Object.keys(found).length ? t('common.fixFields') : '');
     if (Object.keys(found).length) return;
     setBusy(true);
     try {
@@ -68,20 +70,20 @@ function VisitForm({ visit, pets, defaultPetId }) {
             <Icon name="calendar" />
           </span>
           <div>
-            <h3>{visit ? 'Edycja wizyty' : 'Nowa wizyta u weterynarza'}</h3>
-            <p>Wszystkie pola są wymagane.</p>
+            <h3>{visit ? t('visitForm.headEdit') : t('visitForm.headNew')}</h3>
+            <p>{t('visitForm.lead')}</p>
           </div>
         </div>
         <form onSubmit={handleSubmit} noValidate>
           <Alert>{error}</Alert>
           <div className="form-grid">
-            <Field label="Zwierzę" error={errors.petId}>
+            <Field label={t('visitForm.pet')} error={errors.petId}>
               <select
                 value={form.petId}
                 onChange={update('petId')}
                 aria-invalid={Boolean(errors.petId)}
               >
-                <option value="">Wybierz zwierzę…</option>
+                <option value="">{t('visitForm.choosePet')}</option>
                 {pets.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name} ({p.species})
@@ -90,65 +92,62 @@ function VisitForm({ visit, pets, defaultPetId }) {
               </select>
             </Field>
             <Field
-              label="Data i godzina"
+              label={t('visitForm.dateTime')}
               type="datetime-local"
               value={form.visitDateTime}
               onChange={update('visitDateTime')}
               error={errors.visitDateTime}
             />
             <Field
-              label="Gabinet weterynaryjny"
+              label={t('visitForm.clinic')}
               value={form.clinic}
               maxLength={100}
-              placeholder="np. VetCare Lublin"
+              placeholder={t('visitForm.clinicPlaceholder')}
               onChange={update('clinic')}
               error={errors.clinic}
             />
-            <Field label="Status" error={errors.status}>
+            <Field label={t('visitForm.status')} error={errors.status}>
               <select value={form.status} onChange={update('status')}>
-                <option value="planned">Zaplanowana</option>
-                <option value="done">Zakończona (historia)</option>
+                <option value="planned">{t('visitForm.statusPlanned')}</option>
+                <option value="done">{t('visitForm.statusDone')}</option>
               </select>
             </Field>
             <Field
               as="textarea"
               wide
-              label="Cel wizyty"
+              label={t('visitForm.purpose')}
               value={form.purpose}
               maxLength={200}
-              placeholder="np. Szczepienie przeciw wściekliźnie, kontrola okresowa…"
+              placeholder={t('visitForm.purposePlaceholder')}
               onChange={update('purpose')}
               error={errors.purpose}
             />
           </div>
           {isPast && form.status === 'planned' && (
-            <p className="form-hint">
-              Wybrana data jest w przeszłości. Jeśli wizyta już się odbyła, ustaw status
-              „Zakończona”.
-            </p>
+            <p className="form-hint">{t('visitForm.pastHint')}</p>
           )}
           <div className="form-buttons">
             <button className="secondary" type="button" onClick={() => navigate(-1)}>
-              Anuluj
+              {t('common.cancel')}
             </button>
             <button className="primary" type="submit" disabled={busy}>
-              <Icon name="check" size={18} /> {busy ? 'Zapisywanie…' : 'Zapisz wizytę'}
+              <Icon name="check" size={18} /> {busy ? t('common.saving') : t('visitForm.submit')}
             </button>
           </div>
         </form>
       </section>
       <aside className="upload-card">
-        <h3>Podsumowanie</h3>
-        <p>Sprawdź dane przed zapisaniem.</p>
+        <h3>{t('visitForm.summary')}</h3>
+        <p>{t('visitForm.summaryText')}</p>
         <dl className="summary-list">
-          <dt>Zwierzę</dt>
+          <dt>{t('visitForm.pet')}</dt>
           <dd>{pets.find((p) => String(p.id) === form.petId)?.name || '—'}</dd>
-          <dt>Termin</dt>
+          <dt>{t('visitForm.summaryDate')}</dt>
           <dd>{form.visitDateTime ? formatDateTime(form.visitDateTime) : '—'}</dd>
-          <dt>Gabinet</dt>
+          <dt>{t('visitForm.summaryClinic')}</dt>
           <dd>{form.clinic || '—'}</dd>
-          <dt>Status</dt>
-          <dd>{form.status === 'done' ? 'Zakończona' : 'Zaplanowana'}</dd>
+          <dt>{t('visitForm.status')}</dt>
+          <dd>{form.status === 'done' ? t('visits.statusDone') : t('visits.statusPlanned')}</dd>
         </dl>
       </aside>
     </div>
@@ -161,9 +160,10 @@ export default function VisitFormPage() {
   const [searchParams] = useSearchParams();
   const pets = useApiData('/pets');
   const visit = useApiData(id ? `/visits/${id}` : null);
+  const { t } = useI18n();
   usePageMeta(
-    id ? 'Edycja wizyty' : 'Nowa wizyta',
-    id ? 'Zmień termin lub szczegóły wizyty.' : 'Zaplanuj wizytę u weterynarza.',
+    id ? t('visitForm.titleEdit') : t('visitForm.titleNew'),
+    id ? t('visitForm.subtitleEdit') : t('visitForm.subtitleNew'),
   );
 
   const error = pets.error || visit.error;
@@ -173,14 +173,14 @@ export default function VisitFormPage() {
   if (pets.data.pets.length === 0)
     return (
       <EmptyState
-        title="Najpierw dodaj zwierzę"
+        title={t('visitForm.noPets')}
         action={
           <Link className="primary" to="/pets/new">
-            <Icon name="plus" size={18} /> Dodaj zwierzę
+            <Icon name="plus" size={18} /> {t('pets.add')}
           </Link>
         }
       >
-        Wizyta musi być przypisana do jednego z Twoich zwierząt.
+        {t('visitForm.noPetsText')}
       </EmptyState>
     );
 

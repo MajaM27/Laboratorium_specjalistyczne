@@ -31,6 +31,9 @@ flowchart LR
 | `utils/validation.js`        | Walidacja pól (e-mail, hasło, zwierzę, wizyta), `assertValid` → 400 |
 | `utils/httpError.js`         | Klasa błędu z kodem HTTP                                            |
 
+Język komunikatów API ustala middleware w `app.js` (`req.lang` z `Accept-Language`, domyślnie
+`pl`); `errorHandler` tłumaczy `error` i `details` przez `utils/i18n.js` (słownik PL → EN).
+
 Przepływ żądania: `route → (requireAuth) → walidacja → zapytanie SQL → JSON`. Błąd rzucony jako
 `HttpError` trafia do `errorHandler`, który zwraca `{ error, details }`.
 
@@ -48,6 +51,7 @@ przeniesionego do zwykłego CSS (bez Tailwinda) i dopasowanego do modelu danych 
 | `main.jsx`     | Punkt wejścia: `BrowserRouter` + `AuthProvider`                                                                      |
 | `App.jsx`      | Definicja tras; trasy publiczne (`/login`, `/register`) i chronione                                                  |
 | `api/`         | `apiRequest()` – wspólny klient HTTP (token, błędy)                                                                  |
+| `i18n/`        | Słowniki PL/EN (`messages.js`), bieżący język i `translate()` (`i18n.js`)                                            |
 | `context/`     | `AuthProvider` / `useAuth()` – token w `localStorage`, użytkownik, `request()`                                       |
 | `hooks/`       | `useApiData` (pobieranie danych), `usePageMeta`, `useVisitActions`, `useDebounced`, `useTheme`                       |
 | `pages/`       | Strony powiązane z trasami                                                                                           |
@@ -78,6 +82,12 @@ przeniesionego do zwykłego CSS (bez Tailwinda) i dopasowanego do modelu danych 
 - Usunięcie zwierzęcia lub wizyty wymaga potwierdzenia (`window.confirm`).
 - Aplikacja nie przechowuje zdjęć zwierząt – zamiast zdjęć z projektu graficznego używamy
   kolorowego kafelka z inicjałem imienia (kolor zależny od `id`).
+- **Języki PL/EN (NF-C-02)**: wszystkie teksty interfejsu są w `i18n/messages.js` (klucze
+  wspólne dla obu języków, odmiana przez liczby jako funkcje). `LanguageProvider` / `useI18n()`
+  dają funkcję `t(klucz, parametry)`; wybór (`LanguageSwitch` w nagłówku i na ekranach logowania)
+  zapisywany jest w `localStorage` (`petcare-lang`), domyślnie polski. Daty formatowane są wg
+  języka (`pl-PL` / `en-GB`), a klient API wysyła `Accept-Language`, więc błędy z backendu też są
+  w wybranym języku. Dane wpisane przez użytkownika (gatunek, notatki, cel wizyty) nie są tłumaczone.
 - **Tryb ciemny (NF-C-01)**: wszystkie kolory w `index.css` pochodzą ze zmiennych CSS;
   `:root[data-theme='dark']` nadpisuje je ciemnymi wartościami. Skrypt w `index.html` ustawia
   `data-theme` przed renderowaniem (bez błysku jasnego ekranu): zapisany wybór z `localStorage`
