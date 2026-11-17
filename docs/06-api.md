@@ -21,7 +21,7 @@ Format danych: JSON (treść żądania maks. 100 kB). Testy ręczne:
   `DELETE /auth/me` – po `AUTH_RATE_LIMIT_MAX` (domyślnie 10) odpowiedziach 4xx z jednego adresu IP
   w ciągu `AUTH_RATE_LIMIT_WINDOW_MINUTES` (15 min) kolejne żądania dostają `429` z nagłówkiem
   `Retry-After` (sekundy). Udane żądania nie są liczone.
-- Każda odpowiedź ma nagłówki bezpieczeństwa: `X-Content-Type-Options: nosniff`,
+- Każda odpowiedź API ma nagłówki bezpieczeństwa: `X-Content-Type-Options: nosniff`,
   `X-Frame-Options: DENY`, `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`,
   `Referrer-Policy: no-referrer`.
 
@@ -144,7 +144,8 @@ Odpowiedź `200`:
 { "user": { "id": 2, "email": "anna@example.com", "createdAt": "2026-10-28 07:20:16" } }
 ```
 
-Błędy: `401` – brak tokenu, token nieważny/wygasły lub konto usunięte.
+Błędy: `401` – brak tokenu, token nieważny/wygasły, konto usunięte lub hasło zmienione po
+wydaniu tokenu.
 
 ### PUT /auth/password ✅
 
@@ -154,8 +155,9 @@ Wymaga tokenu. Treść żądania:
 { "currentPassword": "Haslo1234", "newPassword": "NoweHaslo99" }
 ```
 
-Odpowiedź `200`: `{ "message": "Hasło zostało zmienione." }`. Wydane wcześniej tokeny pozostają
-ważne do wygaśnięcia (JWT jest bezstanowy).
+Odpowiedź `200`: `{ "message": "Hasło zostało zmienione.", "token": "eyJ…" }`. Zmiana hasła
+**unieważnia wszystkie wcześniej wydane tokeny** (także ten użyty w żądaniu) – np. sesje na innych
+urządzeniach dostaną `401`. Bieżąca sesja powinna zastąpić token tym z odpowiedzi.
 
 Błędy `400` (z `details`): `newPassword` – te same reguły co przy rejestracji albo hasło takie
 samo jak obecne; `currentPassword` – brak lub nieprawidłowe hasło. Złe obecne hasło to celowo

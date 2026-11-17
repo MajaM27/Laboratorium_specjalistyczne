@@ -149,3 +149,22 @@ strefa czasowa; daty w testach przesunięte na 2099, żeby nie „przeterminowa�
 (`frontend/test/` – formatowanie, odmiana, parametry zapytań, spójność słowników PL/EN).
 `npm test` uruchamia oba zestawy. Sprawdzone w przeglądarce: panel z zaległą wizytą, usuwanie
 wizyty w szczegółach zwierzęcia, błąd pola przy złym haśle (bez wylogowania), usunięcie konta.
+
+### 2026-11-17 – Drugi przegląd: poprawki
+
+- **Wyszukiwanie i sortowanie z polskimi znakami**: SQLite rozróżnia wielkość liter w `LIKE`
+  i `COLLATE NOCASE` tylko dla ASCII – „łat” nie znajdowało „Łatka”, a „Ćma”, „Łatka”, „Żaba”
+  lądowały na końcu listy. Teraz funkcja `pl_lower` (zarejestrowana w `db/index.js`) i sortowanie
+  `Intl.Collator('pl')`.
+- **Zmiana hasła wylogowuje pozostałe sesje** (`users.token_version`); bieżąca karta dostaje nowy
+  token. Wcześniej przejęty token działał mimo zmiany hasła aż do wygaśnięcia.
+- **Migracje bazy** (`db/migrations.js`, `PRAGMA user_version`) – istniejące bazy dostają nowe
+  kolumny przy starcie serwera bez utraty danych (bez `db:reset`).
+- **Dane demo** z datami liczonymi względem dnia uruchomienia seeda – wcześniej „zaplanowana”
+  wizyta z 15.11.2026 była już przeterminowana.
+- **Wersja produkcyjna**: backend serwuje zbudowany frontend (`npm run build` +
+  `NODE_ENV=production npm start`); ścisła CSP tylko dla `/api`, żeby strona mogła ładować skrypty.
+
+Testy backendu: 53 (nowe: polskie znaki, unieważnienie tokenu, migracje, serwowanie frontendu).
+Sprawdzone ręcznie: build produkcyjny pod jednym adresem (`/`, `/pets/3`, `/api/health`, pliki
+`assets/`), migracja istniejącej lokalnej bazy bez utraty danych.

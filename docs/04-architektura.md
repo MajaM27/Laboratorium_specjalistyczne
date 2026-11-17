@@ -11,7 +11,8 @@ flowchart LR
 ```
 
 - W trybie deweloperskim Vite przekazuje żądania `/api/*` do backendu (proxy), więc frontend
-  i API działają jak jedna aplikacja.
+  i API działają jak jedna aplikacja. W produkcji backend sam serwuje zbudowany frontend
+  (`middleware/frontend.js`, patrz [07-uruchomienie.md](07-uruchomienie.md#76-wersja-produkcyjna)).
 - Autoryzacja: po zalogowaniu backend wydaje token **JWT**; frontend dołącza go do każdego
   żądania w nagłówku `Authorization: Bearer <token>`.
 
@@ -29,7 +30,9 @@ flowchart LR
 | `middleware/auth.js`            | `requireAuth` (weryfikacja JWT, tylko HS256), `signToken`           |
 | `middleware/errorHandler.js`    | Obsługa błędów (400 zły JSON, 404, 413, 500)                        |
 | `middleware/rateLimit.js`       | Limit nieudanych prób logowania/hasła z jednego IP → 429            |
-| `middleware/securityHeaders.js` | Nagłówki bezpieczeństwa (nosniff, X-Frame-Options, CSP)             |
+| `middleware/securityHeaders.js` | Nagłówki bezpieczeństwa (nosniff, X-Frame-Options; CSP dla API)     |
+| `middleware/frontend.js`        | Produkcja: pliki `frontend/dist` + `index.html` dla tras Reacta     |
+| `db/migrations.js`              | Migracje istniejących baz (`PRAGMA user_version`)                   |
 | `utils/validation.js`           | Walidacja pól (e-mail, hasło, zwierzę, wizyta), `assertValid` → 400 |
 | `utils/httpError.js`            | Klasa błędu z kodem HTTP                                            |
 | `utils/time.js`                 | Bieżący czas lokalny serwera, „najpóźniejsze dzisiaj” (UTC+14)      |
@@ -118,9 +121,12 @@ przeniesionego do zwykłego CSS (bez Tailwinda) i dopasowanego do modelu danych 
   z `Retry-After`. Udane żądania nie są liczone, więc zwykły użytkownik nie jest blokowany.
   Licznik jest w pamięci procesu (wystarczy przy jednej instancji; reset po restarcie serwera).
 - **Nagłówki bezpieczeństwa** na każdej odpowiedzi (`middleware/securityHeaders.js`):
-  `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
-  `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`, `Referrer-Policy: no-referrer`.
+  `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`;
+  odpowiedzi `/api` dodatkowo `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`.
 - Haszowanie bcrypt jest asynchroniczne – nie blokuje obsługi innych żądań.
+- **Zmiana hasła wylogowuje pozostałe sesje**: token zawiera `ver` = `users.token_version`;
+  zmiana hasła zwiększa wersję, więc starsze tokeny są odrzucane (`401`), a bieżąca sesja
+  dostaje nowy token w odpowiedzi.
 - Zmiana hasła i usunięcie konta wymagają podania obecnego hasła; złe hasło to `400` (błąd pola),
   a nie `401`, żeby frontend nie wylogował użytkownika.
 - **Token w `localStorage` – świadomy kompromis.** Zaleta: prosty klient i brak problemów z CSRF

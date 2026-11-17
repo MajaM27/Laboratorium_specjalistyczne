@@ -28,6 +28,11 @@ function databasePath() {
   return value === ':memory:' ? value : path.resolve(backendRoot, value);
 }
 
+// Zbudowany frontend (npm run build) – serwowany przez backend w produkcji
+function frontendDist() {
+  return path.resolve(backendRoot, process.env.FRONTEND_DIST || '../frontend/dist');
+}
+
 export const config = {
   env: process.env.NODE_ENV ?? 'development',
   port: integer('PORT', 3001, { min: 1, max: 65535 }),
@@ -38,6 +43,7 @@ export const config = {
   // Limit nieudanych prób logowania/rejestracji z jednego adresu IP
   authRateLimitMax: integer('AUTH_RATE_LIMIT_MAX', 10, { min: 1, max: 1_000_000 }),
   authRateLimitWindowMinutes: integer('AUTH_RATE_LIMIT_WINDOW_MINUTES', 15, { min: 1, max: 1440 }),
+  frontendDist: frontendDist(),
   corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:5180',
 };
 

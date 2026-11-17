@@ -36,6 +36,7 @@ Pliki `.env` **nie trafiają do repozytorium** – w repo są tylko szablony `.e
 | `AUTH_RATE_LIMIT_WINDOW_MINUTES` | `15`                    | Okno czasowe limitu prób (minuty)                   |
 | `BCRYPT_ROUNDS`                  | `10`                    | Koszt haszowania haseł (4–15)                       |
 | `CORS_ORIGIN`                    | `http://localhost:5180` | Adres frontendu dopuszczony przez CORS              |
+| `FRONTEND_DIST`                  | `../frontend/dist`      | Zbudowany frontend serwowany w produkcji            |
 
 ¹ Wartość `:memory:` oznacza bazę w pamięci (używają jej testy automatyczne).
 ² Przy `NODE_ENV=production` musi mieć co najmniej 32 znaki – inaczej serwer nie wystartuje.
@@ -53,18 +54,19 @@ blokady wystarczy odczekać okno czasowe albo zrestartować backend.
 
 ## 7.4 Skrypty (katalog główny)
 
-| Polecenie          | Działanie                                     |
-| ------------------ | --------------------------------------------- |
-| `npm run dev`      | API + frontend jednocześnie (concurrently)    |
-| `npm run dev:api`  | Tylko backend (z automatycznym restartem)     |
-| `npm run dev:web`  | Tylko frontend                                |
-| `npm run build`    | Build produkcyjny frontendu → `frontend/dist` |
-| `npm run db:init`  | Tworzy tabele                                 |
-| `npm run db:seed`  | Dane testowe (`demo@petcare.pl` / `Demo1234`) |
-| `npm run db:reset` | Czyści bazę i wgrywa dane testowe             |
-| `npm test`         | Testy API (baza w pamięci) i logiki frontendu |
-| `npm run lint`     | ESLint                                        |
-| `npm run format`   | Prettier                                      |
+| Polecenie          | Działanie                                             |
+| ------------------ | ----------------------------------------------------- |
+| `npm run dev`      | API + frontend jednocześnie (concurrently)            |
+| `npm run dev:api`  | Tylko backend (z automatycznym restartem)             |
+| `npm run dev:web`  | Tylko frontend                                        |
+| `npm run build`    | Build produkcyjny frontendu → `frontend/dist`         |
+| `npm start`        | Backend bez automatycznego restartu (produkcja – 7.6) |
+| `npm run db:init`  | Tworzy tabele                                         |
+| `npm run db:seed`  | Dane testowe (`demo@petcare.pl` / `Demo1234`)         |
+| `npm run db:reset` | Czyści bazę i wgrywa dane testowe                     |
+| `npm test`         | Testy API (baza w pamięci) i logiki frontendu         |
+| `npm run lint`     | ESLint                                                |
+| `npm run format`   | Prettier                                              |
 
 ## 7.5 Narzędzia i wtyczki
 
@@ -85,3 +87,20 @@ blokady wystarczy odczekać okno czasowe albo zrestartować backend.
 **Rozszerzenia VS Code** (`.vscode/extensions.json` – VS Code zaproponuje instalację):
 ESLint, Prettier, EditorConfig, SQLite Viewer (podgląd bazy), REST Client (`requests.http`),
 PlantUML (diagram UCD), Markdown Mermaid (diagramy w dokumentacji), Code Spell Checker – polski.
+
+## 7.6 Wersja produkcyjna
+
+W produkcji backend serwuje także zbudowany frontend – cała aplikacja działa pod jednym adresem
+(bez Vite i bez CORS):
+
+```bash
+npm run build                      # frontend → frontend/dist
+NODE_ENV=production npm start      # aplikacja: http://localhost:3001, API: /api
+```
+
+- Przy `NODE_ENV=production` `JWT_SECRET` musi mieć co najmniej 32 znaki, a katalog
+  `frontend/dist` musi istnieć (inaczej serwer nie wystartuje – z czytelnym komunikatem).
+- Odświeżenie strony na dowolnej trasie (np. `/pets/3`) zwraca `index.html` – routing obsługuje
+  React. Pliki z `assets/` (nazwy z hashem) są cache'owane na rok, `index.html` – zawsze świeży.
+- Limit prób logowania liczy adres IP klienta; za odwrotnym proxy (np. nginx) trzeba by włączyć
+  w Express `trust proxy`, inaczej wszyscy użytkownicy mieliby wspólny limit.
