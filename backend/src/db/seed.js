@@ -2,6 +2,15 @@
 import bcrypt from 'bcryptjs';
 import { db, applySchema } from './index.js';
 import { config } from '../config.js';
+import { localNowISO } from '../utils/time.js';
+
+// Daty wizyt liczone względem dnia uruchomienia seeda – dane demo nie „starzeją się”
+// (zaplanowane wizyty są zawsze w przyszłości, odbyte w przeszłości).
+function daysFromToday(days, time) {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return `${localNowISO(date).slice(0, 10)}T${time}`;
+}
 
 applySchema();
 
@@ -43,15 +52,21 @@ const seed = db.transaction(() => {
   );
   insertVisit.run(
     rexId,
-    '2026-03-10T10:00',
+    daysFromToday(-120, '10:00'),
     'VetCare Lublin',
     'Szczepienie przeciw wściekliźnie',
     'done',
   );
-  insertVisit.run(rexId, '2026-11-15T16:30', 'VetCare Lublin', 'Kontrola okresowa', 'planned');
+  insertVisit.run(
+    rexId,
+    daysFromToday(3, '16:30'),
+    'VetCare Lublin',
+    'Kontrola okresowa',
+    'planned',
+  );
   insertVisit.run(
     lunaId,
-    '2026-12-02T09:15',
+    daysFromToday(16, '09:15'),
     'Klinika Pod Łapą',
     'Sterylizacja – konsultacja',
     'planned',
