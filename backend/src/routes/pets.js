@@ -45,18 +45,21 @@ function findOwnPet(userId, rawId) {
 }
 
 // Lista zwierząt użytkownika, opcjonalnie wyszukiwanie po imieniu: GET /api/pets?search=re
+// Wyszukiwanie bez rozróżniania wielkości liter także dla polskich znaków (pl_lower – db/index.js);
+// instr() szuka fragmentu dosłownie, więc znaki % i _ nie mają specjalnego znaczenia.
+const byPolishName = new Intl.Collator('pl', { sensitivity: 'base' });
+
 router.get('/', (req, res) => {
   const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
-  // Znaki % i _ w wyszukiwanej frazie traktujemy dosłownie
-  const pattern = `%${search.replace(/[\\%_]/g, '\\$&')}%`;
 
   const rows = db
     .prepare(
       `SELECT ${PET_COLUMNS} FROM pets p
-       WHERE p.user_id = @userId AND p.name LIKE @pattern ESCAPE '\\'
-       ORDER BY p.name COLLATE NOCASE`,
+       WHERE p.user_id = @userId AND instr(pl_lower(p.name), pl_lower(@search)) > 0`,
     )
-    .all({ userId: req.user.id, pattern, now: localNowISO() });
+    .all({ userId: req.user.id, search, now: localNowISO() });
+  // Sortowanie alfabetyczne wg polskiego alfabetu (Ł po L, Ż na końcu), czego SQLite nie potrafi
+  rows.sort((a, b) => byPolishName.compare(a.name, b.name) || a.id - b.id);
 
   res.json({ pets: rows.map(toPet), total: rows.length });
 });

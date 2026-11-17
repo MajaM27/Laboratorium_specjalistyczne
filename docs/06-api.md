@@ -218,14 +218,14 @@ pominięte zostanie wyczyszczone.
 
 #### Endpointy
 
-| Żądanie               | Odpowiedź                                                                    |
-| --------------------- | ---------------------------------------------------------------------------- |
-| `GET /pets`           | `200 { "pets": [ … ], "total": 2 }` – sortowane po imieniu                   |
-| `GET /pets?search=re` | jak wyżej, tylko imiona zawierające frazę (bez rozróżniania wielkości liter) |
-| `GET /pets/:id`       | `200 { "pet": { … } }`                                                       |
-| `POST /pets`          | `201 { "pet": { … } }`                                                       |
-| `PUT /pets/:id`       | `200 { "pet": { … } }`                                                       |
-| `DELETE /pets/:id`    | `204` – usuwa też wszystkie wizyty zwierzęcia                                |
+| Żądanie               | Odpowiedź                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------- |
+| `GET /pets`           | `200 { "pets": [ … ], "total": 2 }` – sortowane po imieniu wg polskiego alfabetu            |
+| `GET /pets?search=re` | jak wyżej, tylko imiona zawierające frazę (bez rozróżniania wielkości liter, także `Ł`/`ł`) |
+| `GET /pets/:id`       | `200 { "pet": { … } }`                                                                      |
+| `POST /pets`          | `201 { "pet": { … } }`                                                                      |
+| `PUT /pets/:id`       | `200 { "pet": { … } }`                                                                      |
+| `DELETE /pets/:id`    | `204` – usuwa też wszystkie wizyty zwierzęcia                                               |
 
 Błąd walidacji (`400`):
 

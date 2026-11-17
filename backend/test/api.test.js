@@ -427,6 +427,25 @@ describe('Zwierzęta (PU-03)', () => {
     );
   });
 
+  test('wyszukiwanie i sortowanie z polskimi znakami', async () => {
+    const user = await createUser();
+    for (const name of ['Żaba', 'Łatka', 'Lusia', 'Zorro', 'ćma']) {
+      await createPet(user.token, { name });
+    }
+    const all = await api('GET', '/pets', { token: user.token });
+    assert.deepEqual(
+      all.body.pets.map((p) => p.name),
+      ['ćma', 'Lusia', 'Łatka', 'Zorro', 'Żaba'],
+    );
+    const found = await api('GET', `/pets?search=${encodeURIComponent('ŁAT')}`, {
+      token: user.token,
+    });
+    assert.deepEqual(
+      found.body.pets.map((p) => p.name),
+      ['Łatka'],
+    );
+  });
+
   test('izolacja: cudze zwierzę → 404 (odczyt, edycja, usunięcie)', async () => {
     const pet = await createPet(owner.token);
     const body = { name: 'Hack', species: 'Pies' };
