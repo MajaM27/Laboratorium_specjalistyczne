@@ -25,27 +25,31 @@ Pliki `.env` **nie trafiają do repozytorium** – w repo są tylko szablony `.e
 
 ### `backend/.env`
 
-| Zmienna          | Domyślnie               | Opis                                   |
-| ---------------- | ----------------------- | -------------------------------------- |
-| `NODE_ENV`       | `development`           | Środowisko                             |
-| `PORT`           | `3001`                  | Port API                               |
-| `DATABASE_PATH`  | `./data/petcare.db`     | Plik SQLite (względem `backend/`)¹     |
-| `JWT_SECRET`     | – (**wymagana**)        | Sekret podpisu tokenów JWT²            |
-| `JWT_EXPIRES_IN` | `2h`                    | Ważność tokenu                         |
-| `BCRYPT_ROUNDS`  | `10`                    | Koszt haszowania haseł (4–15)          |
-| `CORS_ORIGIN`    | `http://localhost:5180` | Adres frontendu dopuszczony przez CORS |
+| Zmienna                          | Domyślnie               | Opis                                                |
+| -------------------------------- | ----------------------- | --------------------------------------------------- |
+| `NODE_ENV`                       | `development`           | Środowisko                                          |
+| `PORT`                           | `3001`                  | Port API                                            |
+| `DATABASE_PATH`                  | `./data/petcare.db`     | Plik SQLite (względem `backend/`)¹                  |
+| `JWT_SECRET`                     | – (**wymagana**)        | Sekret podpisu tokenów JWT²                         |
+| `JWT_EXPIRES_IN`                 | `1d`                    | Ważność tokenu                                      |
+| `AUTH_RATE_LIMIT_MAX`            | `10`                    | Maks. nieudanych prób logowania/hasła z jednego IP³ |
+| `AUTH_RATE_LIMIT_WINDOW_MINUTES` | `15`                    | Okno czasowe limitu prób (minuty)                   |
+| `BCRYPT_ROUNDS`                  | `10`                    | Koszt haszowania haseł (4–15)                       |
+| `CORS_ORIGIN`                    | `http://localhost:5180` | Adres frontendu dopuszczony przez CORS              |
 
 ¹ Wartość `:memory:` oznacza bazę w pamięci (używają jej testy automatyczne).
 ² Przy `NODE_ENV=production` musi mieć co najmniej 32 znaki – inaczej serwer nie wystartuje.
 Niepoprawne `PORT` lub `BCRYPT_ROUNDS` (np. tekst) również zatrzymują start z komunikatem błędu.
+³ Po przekroczeniu limitu API zwraca `429`. W trybie dev wszystkie żądania przychodzą przez proxy
+Vite z jednego adresu (`127.0.0.1`), więc limit jest wspólny dla wszystkich kart – w razie
+blokady wystarczy odczekać okno czasowe albo zrestartować backend.
 
 ### `frontend/.env`
 
-| Zmienna                 | Domyślnie               | Opis                          |
-| ----------------------- | ----------------------- | ----------------------------- |
-| `VITE_API_URL`          | `/api`                  | Bazowy adres API              |
-| `VITE_API_PROXY_TARGET` | `http://localhost:3001` | Cel proxy Vite w trybie dev   |
-| `VITE_APP_NAME`         | `PetCare`               | Nazwa aplikacji w interfejsie |
+| Zmienna                 | Domyślnie               | Opis                        |
+| ----------------------- | ----------------------- | --------------------------- |
+| `VITE_API_URL`          | `/api`                  | Bazowy adres API            |
+| `VITE_API_PROXY_TARGET` | `http://localhost:3001` | Cel proxy Vite w trybie dev |
 
 ## 7.4 Skrypty (katalog główny)
 
@@ -58,7 +62,7 @@ Niepoprawne `PORT` lub `BCRYPT_ROUNDS` (np. tekst) również zatrzymują start z
 | `npm run db:init`  | Tworzy tabele                                 |
 | `npm run db:seed`  | Dane testowe (`demo@petcare.pl` / `Demo1234`) |
 | `npm run db:reset` | Czyści bazę i wgrywa dane testowe             |
-| `npm test`         | Testy automatyczne API (baza w pamięci)       |
+| `npm test`         | Testy API (baza w pamięci) i logiki frontendu |
 | `npm run lint`     | ESLint                                        |
 | `npm run format`   | Prettier                                      |
 

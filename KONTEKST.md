@@ -45,6 +45,7 @@ frontend/             SPA (React + Vite)
   src/pages/          widoki (strony routingu)
   src/components/     komponenty wielokrotnego użytku
   src/styles/         CSS
+  test/               testy logiki frontendu (node:test, bez przeglądarki)
 docs/                 dokumentacja projektu (aktualizowana na bieżąco)
 ```
 
@@ -61,6 +62,11 @@ docs/                 dokumentacja projektu (aktualizowana na bieżąco)
 7. **Usuwanie kaskadowe**: usunięcie zwierzęcia usuwa jego wizyty.
 8. **Walidacja zawsze na backendzie**; frontend waliduje dodatkowo dla wygody.
 9. **Format błędów API**: `{ "error": "komunikat po polsku", "details": { "pole": "opis" } }`.
+10. **Najbliższa wizyta** = najwcześniejsza `planned` z datą ≥ teraz (lokalny czas serwera);
+    `planned` z datą w przeszłości to wizyta **zaległa** (`overdueVisitCount` w `/stats`).
+11. **Limit nieudanych prób** logowania/hasła: 10 na 15 min z jednego IP → `429`
+    (`AUTH_RATE_LIMIT_*`). Złe hasło przy zmianie hasła/usuwaniu konta → `400`, nie `401`
+    (401 = wygasła sesja, frontend wtedy wylogowuje).
 
 ## Konwencje
 

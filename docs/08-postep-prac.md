@@ -114,3 +114,38 @@ Status: ⬜ do zrobienia · 🟨 w trakcie · ✅ zrobione.
 - Sprawdzone w przeglądarce: panel, wizyty, szczegóły zwierzęcia w obu językach; błędy walidacji
   z API po angielsku.
 - Ograniczenie: format pól daty (`dd.mm.rrrr`) zależy od języka przeglądarki, nie aplikacji.
+
+### 2026-11-17 – Poprawki po przeglądzie kodu
+
+Bezpieczeństwo:
+
+- Limit nieudanych prób logowania, rejestracji, zmiany hasła i usunięcia konta (10 / 15 min
+  z jednego IP → `429` z `Retry-After`), nagłówki bezpieczeństwa, asynchroniczny bcrypt,
+  obsługa równoczesnej rejestracji tego samego e-maila (409 zamiast 500).
+- Opis kompromisu „token w `localStorage`” w [04-architektura.md](04-architektura.md).
+
+Błędy:
+
+- Data urodzenia „dzisiaj” była odrzucana tuż po północy (backend liczył datę w UTC).
+- „Najbliższa wizyta” mogła być wizytą sprzed miesięcy – teraz tylko wizyty z przyszłości,
+  zaległe liczone osobno i oznaczane w panelu („Po terminie”).
+- Panel główny kręcił loaderem bez końca przy błędzie API.
+- „Anuluj” w formularzu wizyty prowadzi do stałej strony (wcześniej `history.back()` mogło
+  wyprowadzić z aplikacji).
+- Po zalogowaniu powrót na stronę razem z parametrami adresu (np. `?petId=`).
+- Ostrzeżenie / potwierdzenie przy oznaczaniu jako zakończonej wizyty z przyszłości.
+
+Dopracowanie:
+
+- Strona „Moje konto”: zmiana hasła i usunięcie konta (`PUT /auth/password`, `DELETE /auth/me`).
+- Domyślna ważność tokenu 1 dzień; po wygaśnięciu sesji komunikat na ekranie logowania i powrót
+  na tę samą stronę. Synchronizacja wylogowania między kartami.
+- Usuwanie wizyt na stronie szczegółów zwierzęcia.
+- Dostępność: `aria-describedby` dla błędów pól, `aria-label` na przyciskach z ikoną.
+- Usunięta nieużywana zmienna `VITE_APP_NAME`.
+
+Testy: backend 49 (nowe: limit prób, nagłówki, zmiana hasła, usunięcie konta, zaległe wizyty,
+strefa czasowa; daty w testach przesunięte na 2099, żeby nie „przeterminowały się”), frontend 12
+(`frontend/test/` – formatowanie, odmiana, parametry zapytań, spójność słowników PL/EN).
+`npm test` uruchamia oba zestawy. Sprawdzone w przeglądarce: panel z zaległą wizytą, usuwanie
+wizyty w szczegółach zwierzęcia, błąd pola przy złym haśle (bez wylogowania), usunięcie konta.
