@@ -29,11 +29,15 @@ Pliki `.env` **nie trafiają do repozytorium** – w repo są tylko szablony `.e
 | ---------------- | ----------------------- | -------------------------------------- |
 | `NODE_ENV`       | `development`           | Środowisko                             |
 | `PORT`           | `3001`                  | Port API                               |
-| `DATABASE_PATH`  | `./data/petcare.db`     | Plik SQLite (względem `backend/`)      |
-| `JWT_SECRET`     | – (**wymagana**)        | Sekret podpisu tokenów JWT             |
+| `DATABASE_PATH`  | `./data/petcare.db`     | Plik SQLite (względem `backend/`)¹     |
+| `JWT_SECRET`     | – (**wymagana**)        | Sekret podpisu tokenów JWT²            |
 | `JWT_EXPIRES_IN` | `2h`                    | Ważność tokenu                         |
-| `BCRYPT_ROUNDS`  | `10`                    | Koszt haszowania haseł                 |
+| `BCRYPT_ROUNDS`  | `10`                    | Koszt haszowania haseł (4–15)          |
 | `CORS_ORIGIN`    | `http://localhost:5180` | Adres frontendu dopuszczony przez CORS |
+
+¹ Wartość `:memory:` oznacza bazę w pamięci (używają jej testy automatyczne).
+² Przy `NODE_ENV=production` musi mieć co najmniej 32 znaki – inaczej serwer nie wystartuje.
+Niepoprawne `PORT` lub `BCRYPT_ROUNDS` (np. tekst) również zatrzymują start z komunikatem błędu.
 
 ### `frontend/.env`
 
@@ -54,6 +58,7 @@ Pliki `.env` **nie trafiają do repozytorium** – w repo są tylko szablony `.e
 | `npm run db:init`  | Tworzy tabele                                 |
 | `npm run db:seed`  | Dane testowe (`demo@petcare.pl` / `Demo1234`) |
 | `npm run db:reset` | Czyści bazę i wgrywa dane testowe             |
+| `npm test`         | Testy automatyczne API (baza w pamięci)       |
 | `npm run lint`     | ESLint                                        |
 | `npm run format`   | Prettier                                      |
 

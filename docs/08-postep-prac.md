@@ -76,3 +76,18 @@ Status: ⬜ do zrobienia · 🟨 w trakcie · ✅ zrobione.
 - Responsywność: menu wysuwane poniżej 800 px, układ jednokolumnowy poniżej 580 px.
 - Sprawdzone w przeglądarce na koncie demo (panel, listy, szczegóły, filtry, walidacja, widok mobilny).
 - Zostaje w kroku 8: ewentualny ciemny motyw (NF-C-01), test w innych przeglądarkach.
+
+### 2026-11-10 – Dopracowanie i testy automatyczne backendu
+
+- Dodano testy automatyczne API (`npm test`, wbudowany `node:test`, baza SQLite w pamięci):
+  36 testów – autoryzacja, zwierzęta, wizyty, filtry, statystyki, izolacja danych, błędy.
+- JWT: weryfikacja tylko algorytmu HS256 (token bez podpisu `alg: none` jest odrzucany),
+  schemat `Bearer` bez rozróżniania wielkości liter.
+- Obsługa błędów: za duża treść żądania zwraca `413` (wcześniej `500`), inne błędy klienta
+  z Express – właściwy kod 4xx zamiast `500`.
+- Walidacja: `weight` i `petId` muszą być liczbą lub tekstem (odrzucane `true`, tablice, obiekty).
+- Konfiguracja: sprawdzanie `PORT` i `BCRYPT_ROUNDS`, wymagany długi `JWT_SECRET` w produkcji,
+  obsługa `DATABASE_PATH=:memory:`.
+- Serwer: wyłączony nagłówek `X-Powered-By`, czytelny komunikat przy zajętym porcie,
+  łagodne zamknięcie (Ctrl+C) z zamknięciem bazy.
+- Zmiany API zgodne wstecz – frontend nie wymaga zmian.

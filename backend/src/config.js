@@ -12,12 +12,32 @@ function required(name) {
   return value;
 }
 
+function integer(name, fallback, { min, max }) {
+  const raw = process.env[name];
+  if (raw === undefined || raw === '') return fallback;
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value < min || value > max) {
+    throw new Error(`Zmienna ${name} musi być liczbą całkowitą z zakresu ${min}–${max}.`);
+  }
+  return value;
+}
+
+// ":memory:" – baza w pamięci (używana w testach), w pozostałych przypadkach ścieżka do pliku
+function databasePath() {
+  const value = process.env.DATABASE_PATH || './data/petcare.db';
+  return value === ':memory:' ? value : path.resolve(backendRoot, value);
+}
+
 export const config = {
   env: process.env.NODE_ENV ?? 'development',
-  port: Number(process.env.PORT ?? 3001),
-  databasePath: path.resolve(backendRoot, process.env.DATABASE_PATH ?? './data/petcare.db'),
+  port: integer('PORT', 3001, { min: 1, max: 65535 }),
+  databasePath: databasePath(),
   jwtSecret: required('JWT_SECRET'),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '2h',
-  bcryptRounds: Number(process.env.BCRYPT_ROUNDS ?? 10),
+  bcryptRounds: integer('BCRYPT_ROUNDS', 10, { min: 4, max: 15 }),
   corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:5180',
 };
+
+if (config.env === 'production' && config.jwtSecret.length < 32) {
+  throw new Error('W produkcji JWT_SECRET musi mieć co najmniej 32 znaki.');
+}

@@ -36,6 +36,7 @@ backend/              API (Express)
   src/routes/         trasy API (jeden plik na moduł)
   src/middleware/     auth, obsługa błędów
   src/utils/          pomocnicze (HttpError, walidacja)
+  test/               testy automatyczne API (node:test, baza w pamięci) – npm test
   data/               plik bazy SQLite (ignorowany przez git)
   requests.http       ręczne testy API (REST Client)
 frontend/             SPA (React + Vite)
@@ -65,7 +66,7 @@ docs/                 dokumentacja projektu (aktualizowana na bieżąco)
 
 - Kod (zmienne, funkcje, tabele) po **angielsku**; UI, komentarze i dokumentacja po **polsku**.
 - Zawsze zapytania parametryzowane (`?`), nigdy sklejanie SQL ze stringów.
-- `npm run lint` i `npm run format` przed commitem.
+- `npm test`, `npm run lint` i `npm run format` przed commitem.
 - **Pracujemy małymi krokami** – jeden moduł/funkcjonalność na raz, każdy krok sprawdzony
   i opisany w dokumentacji przed przejściem dalej.
 

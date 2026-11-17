@@ -3,22 +3,26 @@ import { config } from '../config.js';
 import { db } from '../db/index.js';
 import { HttpError } from '../utils/httpError.js';
 
+// Akceptujemy tylko ten algorytm – token podpisany inaczej (np. "none") zostanie odrzucony
+const JWT_ALGORITHM = 'HS256';
+
 export function signToken(user) {
   return jwt.sign({ sub: String(user.id) }, config.jwtSecret, {
+    algorithm: JWT_ALGORITHM,
     expiresIn: config.jwtExpiresIn,
   });
 }
 
 // Wymaga nagłówka "Authorization: Bearer <token>". Ustawia req.user = { id, email }.
 export function requireAuth(req, _res, next) {
-  const [scheme, token] = (req.headers.authorization ?? '').split(' ');
-  if (scheme !== 'Bearer' || !token) {
+  const [scheme, token, ...rest] = (req.headers.authorization ?? '').trim().split(/\s+/);
+  if (scheme?.toLowerCase() !== 'bearer' || !token || rest.length > 0) {
     return next(new HttpError(401, 'Zaloguj się, aby kontynuować.'));
   }
 
   let payload;
   try {
-    payload = jwt.verify(token, config.jwtSecret);
+    payload = jwt.verify(token, config.jwtSecret, { algorithms: [JWT_ALGORITHM] });
   } catch {
     return next(new HttpError(401, 'Sesja wygasła lub jest nieprawidłowa. Zaloguj się ponownie.'));
   }

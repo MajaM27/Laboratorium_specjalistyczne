@@ -62,6 +62,7 @@ function validateBirthDate(value) {
 
 function validateWeight(value) {
   if (isEmpty(value)) return null;
+  if (typeof value !== 'number' && typeof value !== 'string') return 'Waga musi być liczbą.';
   const weight = Number(value);
   if (!Number.isFinite(weight) || weight <= 0) return 'Waga musi być liczbą większą od 0.';
   if (weight > 1000) return 'Waga może wynosić maksymalnie 1000 kg.';
@@ -108,6 +109,7 @@ export function isValidDateTime(value) {
 
 function validatePetId(value) {
   if (isEmpty(value)) return 'Wybierz zwierzę.';
+  if (typeof value !== 'number' && typeof value !== 'string') return 'Wybierz zwierzę z listy.';
   const id = Number(value);
   if (!Number.isInteger(id) || id <= 0) return 'Wybierz zwierzę z listy.';
   return null;

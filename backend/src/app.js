@@ -10,9 +10,10 @@ import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 export function createApp() {
   const app = express();
+  app.disable('x-powered-by'); // nie ujawniamy, że serwer działa na Express
 
   app.use(cors({ origin: config.corsOrigin }));
-  app.use(express.json());
+  app.use(express.json({ limit: '100kb' }));
 
   app.use('/api/health', healthRouter);
   app.use('/api/auth', authRouter);
