@@ -3,18 +3,18 @@
 Pracujemy małymi krokami – każdy krok jest sprawdzany i dokumentowany przed przejściem dalej.
 Status: ⬜ do zrobienia · 🟨 w trakcie · ✅ zrobione.
 
-| #   | Krok                                                      | Wymagania                  | Status | Data       |
-| --- | --------------------------------------------------------- | -------------------------- | ------ | ---------- |
-| 0   | Środowisko: monorepo, pakiety, `.env`, ESLint/Prettier    | NF-M-02, NF-S-03           | ✅     | 2026-10-27 |
-| 1   | Baza danych: schemat, init, seed                          | NF-M-03, F-M-09            | ✅     | 2026-10-27 |
-| 2   | Backend: rejestracja, logowanie, `requireAuth`            | F-M-01, F-M-02, NF-M-04/05 | ✅     | 2026-10-28 |
-| 3   | Backend: CRUD zwierząt + wyszukiwanie                     | F-M-03..05, F-S-01         | ✅     | 2026-10-28 |
-| 4   | Backend: CRUD wizyt, filtry, „zakończ”, statystyki        | F-M-06..08, F-S-02/03, F-C | ✅     | 2026-10-28 |
-| 5   | Frontend: logowanie, rejestracja, layout, chronione trasy | F-M-01, F-M-02             | ✅     | 2026-11-03 |
-| 6   | Frontend: zwierzęta (lista, formularz, szczegóły)         | F-M-03..05, F-S-01/04      | ✅     | 2026-11-03 |
-| 7   | Frontend: wizyty i panel główny                           | F-M-06..08, F-S-02/03, F-C | ✅     | 2026-11-03 |
-| 8   | Wygląd: responsywność, komunikaty błędów, (ciemny motyw)  | NF-M-01, NF-S-01/02        | 🟨     | 2026-11-03 |
-| 9   | Dokumentacja końcowa: diagram UCD (draw.io/PNG), zrzuty   | –                          | 🟨     |            |
+| #   | Krok                                                      | Wymagania                    | Status | Data       |
+| --- | --------------------------------------------------------- | ---------------------------- | ------ | ---------- |
+| 0   | Środowisko: monorepo, pakiety, `.env`, ESLint/Prettier    | NF-M-02, NF-S-03             | ✅     | 2026-10-27 |
+| 1   | Baza danych: schemat, init, seed                          | NF-M-03, F-M-09              | ✅     | 2026-10-27 |
+| 2   | Backend: rejestracja, logowanie, `requireAuth`            | F-M-01, F-M-02, NF-M-04/05   | ✅     | 2026-10-28 |
+| 3   | Backend: CRUD zwierząt + wyszukiwanie                     | F-M-03..05, F-S-01           | ✅     | 2026-10-28 |
+| 4   | Backend: CRUD wizyt, filtry, „zakończ”, statystyki        | F-M-06..08, F-S-02/03, F-C   | ✅     | 2026-10-28 |
+| 5   | Frontend: logowanie, rejestracja, layout, chronione trasy | F-M-01, F-M-02               | ✅     | 2026-11-03 |
+| 6   | Frontend: zwierzęta (lista, formularz, szczegóły)         | F-M-03..05, F-S-01/04        | ✅     | 2026-11-03 |
+| 7   | Frontend: wizyty i panel główny                           | F-M-06..08, F-S-02/03, F-C   | ✅     | 2026-11-03 |
+| 8   | Wygląd: responsywność, komunikaty błędów, ciemny motyw    | NF-M-01, NF-S-01/02, NF-C-01 | 🟨     | 2026-11-17 |
+| 9   | Dokumentacja końcowa: diagram UCD (draw.io/PNG), zrzuty   | –                            | 🟨     |            |
 
 ## Dziennik zmian
 
@@ -91,3 +91,14 @@ Status: ⬜ do zrobienia · 🟨 w trakcie · ✅ zrobione.
 - Serwer: wyłączony nagłówek `X-Powered-By`, czytelny komunikat przy zajętym porcie,
   łagodne zamknięcie (Ctrl+C) z zamknięciem bazy.
 - Zmiany API zgodne wstecz – frontend nie wymaga zmian.
+
+### 2026-11-17 – Krok 8: ciemny motyw (NF-C-01)
+
+- Kolory zapisane na sztywno w `index.css` (~150 miejsc) zastąpione zmiennymi CSS
+  (np. `--surface`, `--tint`, `--line-strong`, `--link`); wygląd jasny bez zmian.
+- Ciemna paleta w `:root[data-theme='dark']`, także dla kafelków zwierząt (`--pet-N-bg/fg`)
+  i gradientów; `color-scheme: dark` dla pól formularzy i pasków przewijania.
+- Domyślnie motyw zgodny z ustawieniem systemu; przycisk słońce/księżyc w nagłówku oraz na
+  ekranach logowania i rejestracji, wybór zapamiętywany w `localStorage` (`petcare-theme`).
+- Sprawdzone w przeglądarce: logowanie, panel, lista i szczegóły zwierząt, wizyty, formularz wizyty.
+- Zostaje w kroku 8: test w innych przeglądarkach (NF-M-07).

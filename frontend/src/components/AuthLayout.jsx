@@ -1,11 +1,13 @@
 import Icon from './Icon.jsx';
 import Logo from './Logo.jsx';
+import ThemeToggle from './ThemeToggle.jsx';
 
 // Wspólny układ ekranów logowania i rejestracji
 export default function AuthLayout({ eyebrow, title, lead, children }) {
   return (
     <div className="auth-shell">
       <section className="auth-panel">
+        <ThemeToggle className="auth-theme-toggle" />
         <div className="auth-inner">
           <Logo />
           <div className="auth-copy">
